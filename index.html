@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>吃药提醒 · Medicine Reminder</title>
+<style>
+  :root{
+    --bg:#eef3fb; --card:#fff; --line:#e3e9f5; --text:#22304a; --sub:#7d8aa6;
+    --primary:#2f6bff; --danger:#e8453c; --ok:#12a06a; --warn:#e08b1f;
+  }
+  *{box-sizing:border-box}
+  html{font-size:16px;-webkit-text-size-adjust:100%}
+  html.senior{font-size:19.5px}
+  body{margin:0;padding:1rem .875rem 2.5rem;background:var(--bg);color:var(--text);
+       font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif}
+  .wrap{max-width:34rem;margin:0 auto}
+  button{font-family:inherit;border:none;cursor:pointer;border-radius:.625rem}
+  input,select{font-family:inherit}
+
+  .hdr{display:flex;align-items:flex-start;gap:.625rem;margin:.125rem 0 .875rem}
+  .hdr-t{flex:1;font-size:1.1875rem;font-weight:700}
+  .hdr-t small{display:block;font-size:.75rem;color:var(--sub);font-weight:400;margin-top:.25rem;line-height:1.5}
+  .hdr-btns{display:flex;gap:.4375rem;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+  .gbtn{background:#e8f0ff;color:var(--primary);font-size:.8125rem;font-weight:600;padding:.5625rem .75rem;border-radius:1.25rem;white-space:nowrap}
+  .lbtn{background:#fff;border:1px solid #d9e2f2;color:var(--primary);font-size:.8125rem;font-weight:700;padding:.5625rem .75rem;border-radius:1.25rem;min-width:2.875rem}
+  .sbtn{background:#fff;border:1px solid #f0d9ae;color:#c2760f;font-size:.8125rem;font-weight:700;padding:.5625rem .75rem;border-radius:1.25rem;white-space:nowrap}
+
+  .card{background:var(--card);border-radius:.875rem;padding:.875rem;margin-bottom:.875rem;
+        box-shadow:0 2px 10px rgba(38,70,140,.07)}
+  .card h2{font-size:.875rem;margin:0 0 .625rem;color:var(--sub);font-weight:600}
+  .fl{display:block;font-size:.8125rem;color:var(--sub);margin:.625rem 0 .3125rem;text-align:left}
+  input[type=text],input[type=number],input[type=time],input[type=date],select{
+    width:100%;padding:.6875rem .75rem;border:1px solid var(--line);border-radius:.625rem;
+    font-size:.9375rem;color:var(--text);background:#f9fbff}
+  input:focus,select:focus{outline:none;border-color:#a9c3ff;background:#fff}
+
+  .clock{background:linear-gradient(135deg,#2f6bff,#5b8cff);color:#fff;text-align:center;
+         padding:1rem .875rem .9375rem}
+  .clk-time{font-size:2.375rem;font-weight:700;letter-spacing:.06em;line-height:1.1;
+            font-variant-numeric:tabular-nums}
+  .clk-line{font-size:.8125rem;margin-top:.375rem;opacity:.94}
+  .clk-line.lunar{margin-top:.25rem}
+  .clk-line.term{margin-top:.3125rem;display:inline-block;background:rgba(255,255,255,.2);
+                 padding:.1875rem .625rem;border-radius:1rem;font-weight:600}
+
+  /* 提醒可靠性 */
+  .alertnote{font-size:.75rem;color:#41526e;line-height:1.65}
+  .alertnote.dim{color:var(--sub);margin-top:.5rem}
+
+  .wx-empty{font-size:.8125rem;color:var(--sub);padding:.25rem 0 .625rem}
+  .wx-btns{display:flex;gap:.4375rem;flex-wrap:wrap;margin-top:.625rem}
+  .wx-cityrow{display:none;gap:.5rem;margin-top:.5rem}
+  .wx-cityrow input{flex:1}
+  .mini{background:#eef3ff;color:var(--primary);font-size:.8125rem;font-weight:600;padding:.5rem .6875rem}
+  .mini:active{transform:scale(.97)}
+  .mini:disabled{opacity:.45}
+  .wx-top{display:flex;align-items:center;gap:.75rem}
+  .wx-ico{font-size:2rem;line-height:1}
+  .wx-main{flex:1}
+  .wx-temp{font-size:1.75rem;font-weight:700;line-height:1.1}
+  .wx-desc{font-size:.8125rem;color:var(--sub)}
+  .wx-place{font-size:.8125rem;color:var(--sub);text-align:right;max-width:8rem}
+  .wx-meta{display:flex;flex-wrap:wrap;gap:.375rem .75rem;margin-top:.625rem;font-size:.8125rem;color:var(--text)}
+  .wx-time{font-size:.6875rem;color:var(--sub);margin-top:.5rem}
+
+  .trow{display:flex;gap:.5rem;align-items:center;margin-bottom:.4375rem}
+  .trow input{flex:1}
+  .trow .del{background:#ffeceb;color:var(--danger);font-size:1.0625rem;font-weight:700;
+             width:2.375rem;height:2.375rem;flex:0 0 auto;line-height:1}
+  .primary{background:var(--primary);color:#fff;font-size:.9375rem;font-weight:700;
+           padding:.75rem 1rem;width:100%;margin-top:.875rem}
+  .primary.sm{width:auto;margin-top:0;font-size:.8125rem;padding:.5rem .875rem}
+  .primary:active{transform:scale(.98)}
+  .link{background:none;color:var(--sub);font-size:.75rem;text-decoration:underline;padding:.5rem}
+
+  .row{display:flex;align-items:center;gap:.625rem;padding:.625rem .5rem;border:1px solid var(--line);
+       border-radius:.75rem;margin-bottom:.5rem;background:#fbfdff;cursor:pointer}
+  .row .rt{font-size:1.0625rem;font-weight:700;font-variant-numeric:tabular-nums;flex:0 0 3.25rem}
+  .row .rm{flex:1;min-width:0}
+  .row .rname{font-size:.9375rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row .rdose{font-size:.75rem;color:var(--sub)}
+  .row .rst{font-size:.6875rem;color:var(--sub);margin-top:.125rem}
+  .row .tick{background:#e8f0ff;color:var(--primary);font-size:.75rem;font-weight:700;
+             padding:.4375rem .5rem;flex:0 0 auto;min-width:2.375rem}
+  .row.ok{background:#f2fbf6;border-color:#cceedd}
+  .row.ok .rt{color:var(--ok)}
+  .row.ok .rst{color:var(--ok)}
+  .row.ok .tick{background:#d9f3e6;color:var(--ok)}
+  .row.bad{background:#fff3f2;border-color:#ffc9c4;animation:flash 1.05s ease-in-out infinite}
+  .row.bad .rt,.row.bad .rname,.row.bad .rst{color:var(--danger)}
+  .row.bad .tick{background:#ffe0dd;color:var(--danger)}
+  .row.extra{background:#f7f8fc;border-style:dashed}
+  .row.extra .rt{color:var(--sub)}
+  @keyframes flash{0%,100%{background:#fff3f2}50%{background:#ffdedb}}
+  .empty{font-size:.8125rem;color:var(--sub);padding:.375rem 0}
+  .allDone{background:#f2fbf6;color:var(--ok);font-size:.875rem;font-weight:700;
+           padding:.625rem .75rem;border-radius:.625rem;margin-top:.5rem;text-align:center}
+
+  .mrow{display:flex;align-items:center;gap:.5rem;padding:.5rem 0;border-bottom:1px dashed var(--line)}
+  .mrow:last-child{border-bottom:none}
+  .mrow .mn{flex:1;min-width:0;font-size:.875rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mrow .md{font-size:.75rem;color:var(--sub);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mrow .mbtn{font-size:.75rem;font-weight:700;padding:.4375rem .5625rem;flex:0 0 auto}
+  .mrow .edit-b{background:#e8f0ff;color:var(--primary)}
+  .mrow .del{background:#ffeceb;color:var(--danger)}
+
+  .segrange{display:flex;gap:.375rem;flex-wrap:wrap;margin-bottom:.5rem}
+  .segrange button{background:#f1f4fa;color:var(--sub);font-size:.75rem;font-weight:700;padding:.4375rem .6875rem}
+  .segrange button.on{background:#e8f0ff;color:var(--primary)}
+  .lday{font-size:.75rem;font-weight:700;color:var(--sub);margin:.625rem 0 .25rem}
+  .lrow{display:flex;align-items:center;gap:.5rem;font-size:.8125rem;padding:.25rem;cursor:pointer;border-radius:.375rem}
+  .lrow:active{background:#f2f6ff}
+  .lrow .lt{flex:0 0 2.875rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--sub)}
+  .lrow .ln{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lrow .ls{flex:0 0 auto;font-size:.75rem;color:var(--sub)}
+  .lrow.ok .ls{color:var(--ok)}
+  .lrow.bad .ls,.lrow.bad .ln{color:var(--danger)}
+  .lsum{margin-top:.625rem;font-size:.75rem;color:var(--sub)}
+  .tooline{display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap}
+
+  .statrow{display:flex;gap:.625rem}
+  .statbox{flex:1;background:#f6f9ff;border-radius:.75rem;padding:.75rem .5rem;text-align:center}
+  .statnum{font-size:1.375rem;font-weight:700;color:var(--primary);
+           font-variant-numeric:tabular-nums;line-height:1.2;word-break:break-all}
+  .statlbl{font-size:.6875rem;color:var(--sub);margin-top:.25rem}
+  .statnote{font-size:.6875rem;color:var(--sub);margin-top:.625rem;line-height:1.5;text-align:center}
+
+  .foot{font-size:.75rem;color:var(--sub);text-align:center;line-height:1.6;padding:.25rem .5rem}
+
+  .spot{position:fixed;border-radius:.875rem;box-shadow:0 0 0 9999px rgba(15,25,45,.72);
+        pointer-events:none;display:none;z-index:70;transition:all .25s ease}
+  .spot.on{display:block}
+  .gcard{position:fixed;background:#fff;border-radius:1rem;padding:.875rem;display:none;z-index:71;
+         box-shadow:0 10px 30px rgba(10,20,40,.28)}
+  .gcard.on{display:flex;gap:.6875rem}
+  .gdoc{flex:0 0 3rem}
+  .gbody{flex:1;min-width:0}
+  .gstep{font-size:.6875rem;color:var(--sub)}
+  .gt{font-size:.9375rem;font-weight:700;margin:.1875rem 0 .25rem}
+  .gd{font-size:.8125rem;line-height:1.6;color:#41526e}
+  .gbtns{display:flex;align-items:center;gap:.5rem;margin-top:.6875rem;flex-wrap:wrap}
+
+  .mask{position:fixed;inset:0;background:rgba(18,28,48,.55);display:none;align-items:center;
+        justify-content:center;padding:1rem;z-index:80;overflow-y:auto}
+  .mask.on{display:flex}
+  .dlg{background:#fff;border-radius:1.125rem;padding:1.25rem 1.125rem;max-width:22rem;width:100%;
+       text-align:center;position:relative;overflow:hidden;box-shadow:0 16px 40px rgba(10,20,40,.28)}
+  .dlg.warn{background:#fff8f7}
+  .dlg.cheer{background:#fffdf5}
+  .dlg canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .doc{display:flex;justify-content:center}
+  .doc svg{width:4.5rem;height:4.5rem}
+  .dt{font-size:1.125rem;font-weight:700;margin-top:.5rem}
+  .dm{font-size:.875rem;color:#41526e;line-height:1.6;margin-top:.4375rem}
+  .dm.strong{font-size:.9375rem;font-weight:700;color:var(--danger)}
+  .dm.streak{color:var(--ok);font-weight:700}
+  .dbtns{display:flex;gap:.625rem;justify-content:center;align-items:center;margin-top:1rem;flex-wrap:wrap}
+  .dbtns .primary{width:auto;margin-top:0}
+  .dbtns .mini{font-size:.9375rem;font-weight:700;padding:.75rem 1rem}
+
+  .seg{display:flex;gap:.375rem;margin-top:.875rem}
+  .seg button{flex:1;background:#f1f4fa;color:var(--text);font-size:.875rem;font-weight:600;padding:.625rem .25rem}
+  .seg button.on{background:var(--primary);color:#fff}
+  .seg button.on[data-s=missed]{background:var(--danger)}
+  .seg button.on[data-s=skipped]{background:#8a93a6}
+  .recTip{font-size:.6875rem;color:var(--sub);margin-top:.625rem;line-height:1.5}
+
+  /* 错过的提醒 */
+  .catchlist{max-height:15rem;overflow-y:auto;margin-top:.625rem;text-align:left}
+  .crow{padding:.5rem;border:1px solid var(--line);border-radius:.625rem;margin-bottom:.4375rem;background:#fbfdff}
+  .crow .ct{font-size:.8125rem;margin-bottom:.375rem}
+  .crow .cbtns{display:flex;gap:.375rem}
+  .crow .cbtns button{flex:1;font-size:.75rem;font-weight:700;padding:.4375rem .25rem}
+  .catchtip{font-size:.6875rem;color:var(--sub);margin-top:.5rem;line-height:1.5;text-align:left}
+
+  .toast{position:fixed;left:50%;bottom:1.5rem;transform:translateX(-50%) translateY(.5rem);
+         background:rgba(28,38,58,.94);color:#fff;font-size:.8125rem;padding:.625rem .875rem;
+         border-radius:.625rem;max-width:20rem;text-align:center;line-height:1.5;opacity:0;
+         pointer-events:none;transition:opacity .2s,transform .2s;z-index:95}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hdr">
+    <div class="hdr-t"><span id="appTitle">吃药提醒</span><small id="appSub">按时按量，别漏一顿</small></div>
+    <div class="hdr-btns">
+      <button class="gbtn" id="guideBtn">使用指南</button>
+      <button class="lbtn" id="langBtn">EN</button>
+      <button class="sbtn" id="seniorBtn">A+ 大字版</button>
+    </div>
+  </div>
+
+  <section class="card clock" id="clockCard">
+    <div class="clk-time" id="clkTime">--:--:--</div>
+    <div class="clk-line" id="clkDate">—</div>
+    <div class="clk-line lunar" id="clkLunar">—</div>
+    <div class="clk-line term" id="clkTerm">—</div>
+  </section>
+
+  <section class="card" id="alertCard">
+    <h2 id="alertTitle">提醒可靠性</h2>
+    <div class="alertnote" id="alertNote"></div>
+    <div class="wx-btns">
+      <button class="mini" id="notifyBtn">开启系统通知</button>
+      <button class="mini" id="wakeBtn">屏幕常亮：开</button>
+      <button class="mini" id="soundBtn">试听铃声</button>
+    </div>
+    <div class="alertnote dim" id="wakeNote"></div>
+  </section>
+
+  <section class="card" id="wxCard">
+    <h2 id="wxTitle">今日天气</h2>
+    <div id="wxBody" class="wx-empty">点下方按钮获取本地天气</div>
+    <div class="wx-btns">
+      <button class="mini" id="wxLocate">📍 用我的定位</button>
+      <button class="mini" id="wxManual">🔍 手动选城市</button>
+      <button class="mini" id="wxRefresh">↻ 刷新</button>
+    </div>
+    <div class="wx-cityrow" id="wxCityRow">
+      <input type="text" id="wxCityInput" placeholder="北京 / Shanghai" autocomplete="off">
+      <button class="mini" id="wxCityGo">确定</button>
+    </div>
+  </section>
+
+  <section class="card" id="medForm">
+    <h2 id="addTitle">添加药物</h2>
+    <label class="fl" id="lbName">药物名称</label>
+    <input type="text" id="fName" autocomplete="off">
+    <label class="fl" id="lbDose">每次用量</label>
+    <input type="text" id="fDose" autocomplete="off">
+    <label class="fl" id="lbTimes">提醒时间（可加多个）</label>
+    <div id="timeList"></div>
+    <button class="mini" id="addTime">+ 添加时间</button>
+    <label class="fl" id="lbDays">持续天数（天）</label>
+    <input type="number" id="fDays" min="1" max="365" value="7">
+    <label class="fl" id="lbStart">开始日期</label>
+    <input type="date" id="fStart">
+    <button class="primary" id="saveMed">保存</button>
+    <button class="link" id="cancelEdit" style="display:none;width:100%;margin-top:.625rem">取消编辑</button>
+  </section>
+
+  <section class="card" id="listCard">
+    <h2 id="todayTitle">今日提醒</h2>
+    <div id="list"></div>
+    <div class="allDone" id="allDone" style="display:none"></div>
+  </section>
+
+  <section class="card" id="medsCard">
+    <h2 id="medsTitle">药物清单</h2>
+    <div id="medList"></div>
+  </section>
+
+  <section class="card" id="logCard">
+    <h2 id="logTitle">服药记录</h2>
+    <div class="segrange" id="logRange">
+      <button data-r="7">近 7 天</button>
+      <button data-r="30">近 30 天</button>
+      <button data-r="0">全部</button>
+    </div>
+    <div id="logList"></div>
+    <div class="tooline">
+      <button class="mini" id="logAdd">＋ 补记</button>
+      <button class="mini" id="logCsv">导出 CSV</button>
+      <button class="mini" id="logTxt">导出文本</button>
+    </div>
+  </section>
+
+  <div class="foot" id="footTip">漏服的药整条会标红闪烁；点任意一条记录，可以改成真实的服药时间。</div>
+
+  <section class="card" id="statCard">
+    <h2 id="statTitle">使用统计</h2>
+    <div class="statrow">
+      <div class="statbox">
+        <div class="statnum" id="statLocal">0</div>
+        <div class="statlbl" id="statLocalLbl">本机使用次数</div>
+      </div>
+      <div class="statbox">
+        <div class="statnum" id="statGlobal">—</div>
+        <div class="statlbl" id="statGlobalLbl">全局累计次数</div>
+      </div>
+    </div>
+    <div class="statnote" id="statNote"></div>
+    <div style="text-align:center">
+      <button class="mini" id="statRetry" style="display:none;margin-top:.5rem">重试</button>
+    </div>
+  </section>
+</div>
+
+<div class="spot" id="spot"></div>
+<div class="gcard" id="gcard">
+  <div class="gdoc" id="gdoc"></div>
+  <div class="gbody">
+    <div class="gstep" id="gstep"></div>
+    <div class="gt" id="gt"></div>
+    <div class="gd" id="gd"></div>
+    <div class="gbtns">
+      <button class="mini" id="gPrev">上一步</button>
+      <button class="primary sm" id="gNext">下一步</button>
+      <button class="link" id="gSkip">跳过</button>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="ringMask">
+  <div class="dlg">
+    <div class="doc" id="ringDoc"></div>
+    <div class="dt" id="ringTitle">该吃药了</div>
+    <div class="dm" id="ringMsg"></div>
+    <div class="dbtns">
+      <button class="mini" id="ringSnooze">稍后提醒</button>
+      <button class="primary" id="ringTaken">已服用</button>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="missMask">
+  <div class="dlg warn">
+    <div class="doc" id="missDoc"></div>
+    <div class="dt" id="missTitle">漏服提醒</div>
+    <div class="dm strong" id="missMsg">为了保证您的身体健康，一定要遵医嘱按时服药！</div>
+    <div class="dbtns"><button class="primary" id="missOk">我知道了</button></div>
+  </div>
+</div>
+
+<div class="mask" id="cheerMask">
+  <div class="dlg cheer">
+    <canvas id="cf"></canvas>
+    <div class="doc" id="cheerDoc"></div>
+    <div class="dt" id="cheerTitle"></div>
+    <div class="dm" id="cheerMsg"></div>
+    <div class="dm streak" id="cheerStreak"></div>
+    <div class="dbtns"><button class="primary" id="cheerOk">好的</button></div>
+  </div>
+</div>
+
+<!-- 错过的提醒（补报） -->
+<div class="mask" id="catchMask">
+  <div class="dlg">
+    <div class="doc" id="catchDoc"></div>
+    <div class="dt" id="catchTitle">错过的提醒</div>
+    <div class="dm" id="catchSub"></div>
+    <div class="catchlist" id="catchList"></div>
+    <div class="catchtip" id="catchTip"></div>
+    <div class="dbtns">
+      <button class="link" id="catchLater">稍后处理</button>
+      <button class="primary sm" id="catchDone">完成</button>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="recMask">
+  <div class="dlg">
+    <div class="dt" id="recTitle">服药记录</div>
+    <div class="dm" id="recSub"></div>
+
+    <label class="fl" id="recDateLabel">日期</label>
+    <input type="date" id="recDate">
+
+    <label class="fl" id="recMedLabel">药物</label>
+    <select id="recMed"></select>
+
+    <div id="recNameWrap" style="display:none">
+      <label class="fl" id="recNameLabel">名称</label>
+      <input type="text" id="recName" autocomplete="off">
+    </div>
+
+    <label class="fl" id="recPlanLabel">计划时间</label>
+    <input type="time" id="recPlan">
+
+    <div class="seg" id="recSeg">
+      <button data-s="taken">已服</button>
+      <button data-s="missed">漏服</button>
+      <button data-s="skipped">跳过</button>
+    </div>
+
+    <div id="recAtWrap">
+      <label class="fl" id="recAtLabel">实际服药时间</label>
+      <input type="time" id="recAt">
+    </div>
+
+    <div class="recTip" id="recTip">按真实情况填写；实际时间留空就按计划时间记。跨夜（实际时间明显早于计划时间）会自动算到第二天。</div>
+
+    <div class="dbtns">
+      <button class="link" id="recClear">清除记录</button>
+      <button class="mini" id="recCancel">取消</button>
+      <button class="primary sm" id="recSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+'use strict';
+
+/* ===================== 可调常量 ===================== */
+var STORE_KEY   = 'medReminder_v1';
+var GUIDE_KEY   = 'medReminder_guide_v1';
+var LANG_KEY    = 'medReminder_lang_v1';
+var SENIOR_KEY  = 'medReminder_senior_v1';
+var WX_KEY      = 'medReminder_weather_v1';
+var STAT_KEY    = 'medReminder_stat_v1';
+var WAKE_KEY    = 'medReminder_wake_v1';
+var EARLY_MIN         = 5;
+var SNOOZE_MIN        = 10;
+var MISS_AFTER_MIN    = 30;
+var MISS_RENOTIFY_MIN = 30;
+var AUTO_MS           = 1000;
+var WX_REFRESH_MIN    = 30;
+var LOG_KEEP_DAYS     = 400;
+var TIME_SHIFT_MAX_MIN = 180;
+var NIGHT_SHIFT_MIN   = 360;
+var CATCHUP_MAX_SHOW  = 6;      /* 补报弹窗一次最多列几条 */
+var CATCHUP_CHECK_SEC = 15;     /* 每多少秒检查一次有没有错过的提醒 */
+
+/* —— 全局计数 —— */
+var COUNT_API  = 'https://abacus.jasoncameron.dev';
+var COUNT_NS   = 'med-reminder-2026-x7k';
+var COUNT_KEY  = 'app-opens';
+var COUNT_ONCE_PER_DAY = false;
+var COUNT_TIMEOUT_MS = 8000;
+
+/* ===================== 小工具 ===================== */
+function el(id){ return document.getElementById(id); }
+function pad(n){ return (n < 10 ? '0' : '') + n; }
+function dk(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+function parseD(s){ var a = String(s||'').split('-'); return new Date(+a[0]||1970, ((+a[1])||1)-1, (+a[2])||1); }
+function hm2min(s){ var a = String(s||'0:0').split(':'); return (+a[0])*60 + (+(a[1]||0)); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
+  return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+function on(n){ if(n) n.classList.add('on'); }
+function off(n){ if(n) n.classList.remove('on'); }
+function each(list, fn){ Array.prototype.forEach.call(list, fn); }
+function atText(at){
+  if (!at) return '—';
+  var d = new Date(at);
+  return pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+function doseKey(date, id, time){ return date + '|' + id + '|' + time; }
+function atFromDateTime(dateStr, timeStr){
+  var d = parseD(dateStr), a = String(timeStr||'').split(':');
+  d.setHours(+a[0]||0, +a[1]||0, 0, 0);
+  return d.getTime();
+}
+function nowTimeStr(date){
+  var n = new Date();
+  if (dk(n) === date) return pad(n.getHours()) + ':' + pad(n.getMinutes());
+  return '08:00';
+}
+var toastTimer = null;
+function toast(msg){
+  var n = el('toast');
+  if (!n) return;
+  n.textContent = msg;
+  n.classList.add('on');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ n.classList.remove('on'); }, 2600);
+}
+
+/* ===================== 文案 ===================== */
+var DICT = {
+  zh: {
+    title:'吃药提醒', sub:'按时按量，别漏一顿',
+    guide:'使用指南', lang:'EN', seniorOn:'A+ 大字版', seniorOff:'A− 标准版',
+    lunarTag:'农历', todayTag:'今日', nextTerm:'下一节气', termAfter:'还有 {{n}} 天',
+
+    alertTitle:'提醒可靠性',
+    alertNote:'网页有个天然限制：页面被彻底关掉后就无法响铃了。请把本页“添加到主屏幕”并留在后台；再开启系统通知，即使页面在后台标签页也会弹出提醒。',
+    notifyAsk:'开启系统通知', notifyOnShort:'通知已开启 ✓', notifyBlocked:'通知被浏览器拦截',
+    notifyNoSupport:'本环境不支持通知', notifyOn:'已开启系统通知', notifyAlready:'通知已经开启了',
+    notifyDenied:'通知权限被拒绝，请在浏览器设置里允许本网站通知',
+    notifyTestBody:'通知已可用，到点会提醒你',
+    notifyDoseTitle:'该吃药了', notifyDoseBody:'{{name}} {{dose}}（{{time}}）',
+    notifyMissTitle:'漏服提醒', notifyMissBody:'{{name}} {{time}} 还没吃，请尽快补服',
+    wakeOn:'屏幕常亮：开', wakeOff:'屏幕常亮：关', noWakeSupport:'当前环境不支持保持屏幕常亮',
+    soundBtn:'试听铃声', soundOk:'听到“叮”的一声，说明铃声可用', soundFail:'没能播放声音，请检查手机静音或媒体音量',
+    wakeNote:'今天还有没处理的提醒时，本页会尽量保持屏幕常亮（仅页面可见时），避免手机自动锁屏把页面挂起；全部处理完会自动释放，省电。',
+
+    catchTitle:'错过的提醒', catchSub:'有 {{n}} 条提醒在页面关闭或后台时到期了，请确认实际情况',
+    catchTip:'点“已服”可以填真实服药时间；漏服 / 跳过只记状态。',
+    catchLater:'稍后处理', catchDone:'完成',
+    catchToday:'今天', catchYest:'昨天',
+
+    wxTitle:'今日天气', wxLocate:'📍 用我的定位', wxManual:'🔍 手动选城市', wxRefresh:'↻ 刷新',
+    wxPrompt:'点下方按钮获取本地天气', wxLoading:'正在获取天气…', wxFail:'天气获取失败，请稍后再试',
+    wxNoCity:'没找到这个城市，换个名字试试', wxNoGeo:'当前环境不支持定位，请用手动选城市',
+    wxCityPh:'输入城市名，如 北京 / Shanghai', myLocation:'我的位置',
+    wxHiLo:'高/低', wxHum:'湿度', wxFeels:'体感', wxWind:'风速', wxUpdated:'更新于',
+    addTitle:'添加药物', editTitle:'编辑药物', fName:'药物名称', fDose:'每次用量',
+    fTimes:'提醒时间（可加多个）', addTime:'+ 添加时间', fDays:'持续天数（天）', fStart:'开始日期',
+    save:'保存', saveEdit:'保存修改', cancelEdit:'取消编辑', dayUnit:'天',
+    todayTitle:'今日提醒', medsTitle:'药物清单', edit:'编辑', del:'删除',
+    noMeds:'还没有添加药物，先在上方录入吧', emptyToday:'今天没有需要服用的药',
+    quickTaken:'已服', quickEdit:'修改', extraTag:'计划已改',
+    statusDue:'待服用', statusTaken:'已服', statusMissed:'漏服', statusSkipped:'跳过', statusNone:'未记录',
+    takenAtTpl:'已服 · {{t}} 服下', statusMissedTpl:'漏服 · 未服',
+    allDone:'今天全部按时完成 🎉',
+    recTitle:'服药记录', recSub:'{{name}} · {{date}} {{time}}', backSub:'补记一次服药，可以选过去的任意日期',
+    recDate:'日期', recMed:'药物', recName:'名称', recPlanTime:'计划时间', recActualTime:'实际服药时间',
+    optOther:'其他（手动输入名称）',
+    recTip:'按真实情况填写；实际时间留空就按计划时间记。跨夜（实际时间明显早于计划时间）会自动算到第二天。',
+    recClear:'清除记录', recCancel:'取消', recSave:'保存',
+    recTaken:'已服', recMissed:'漏服', recSkipped:'跳过',
+    logTitle:'服药记录', logEmpty:'还没有服药记录',
+    logRange7:'近 7 天', logRange30:'近 30 天', logRangeAll:'全部',
+    logAdd:'＋ 补记', logCsv:'导出 CSV', logTxt:'导出文本',
+    logSummaryRange:'近 {{n}} 天：已服 {{a}} 次 · 漏服 {{b}} 次 · 跳过 {{c}} 次',
+    logSummaryAll:'全部记录：已服 {{a}} 次 · 漏服 {{b}} 次 · 跳过 {{c}} 次',
+    deletedMed:'已删除的药物',
+    srcAlarm:'闹钟关闭', srcManual:'手动记录', srcAuto:'自动判定', srcBack:'补记', srcMigrated:'历史数据',
+    csvDate:'日期', csvWeek:'星期', csvMed:'药物', csvPlan:'计划时间', csvStatus:'状态', csvActual:'实际服药时间', csvSrc:'记录方式',
+    txtHead:'用药记录', txtExported:'导出时间', txtSummary:'合计',
+    filePrefix:'服药记录',
+    errFuture:'不能记录未来的日期', errSeg:'请选择状态', errName:'请填写名称',
+    errMedName:'请填写药物名称', errTime:'请至少添加一个提醒时间', errDays:'持续天数至少为 1 天',
+    overwrite:'该时间点原有记录已被覆盖',
+    exportEmpty:'还没有记录可以导出', exportFail:'导出失败，请换一个浏览器再试', exportDone:'已导出 {{n}} 条记录',
+
+    statTitle:'使用统计', statLocalLbl:'本机使用次数', statGlobalLbl:'全局累计次数',
+    statLoading:'正在获取全局数据…', statOk:'已同步 · {{t}}',
+    statFail:'暂时拿不到全局数据（离线或服务不可用），点“重试”再试', statRetry:'重试',
+    statNote:'全局数字来自公共计数服务，每次打开会向它发一条自增请求，不上传任何个人信息，也不影响本机功能。',
+
+    ringTitle:'该吃药了', ringMsg:'{{name}}　{{dose}}', ringTaken:'已服用', ringSnooze:'稍后提醒',
+    missTitle:'漏服提醒', missMsg:'为了保证您的身体健康，一定要遵医嘱按时服药！', missOk:'我知道了',
+    cheerTitle:'今天全部完成！', cheerMsg:'太棒了，今天的药一顿都没落下',
+    cheerStreak:'已连续打卡 {{n}} 天', cheerOk:'好的',
+    footTip:'漏服的药整条会标红闪烁；点任意一条记录，可以改成真实的服药时间。',
+    bootFail:'初始化出错：{{m}}',
+    gSkip:'跳过', gNext:'下一步', gPrev:'上一步', gDone:'开始使用', gStep:'第 {{i}} / {{n}} 步',
+    g1t:'日期、时间与农历', g1d:'这里显示当地时间与公历日期，同时给出农历和节气；节气当天会显示“今日”，否则提示还有几天。',
+    g2t:'提醒可靠性（先看这个）', g2d:'网页被彻底关掉后没法响铃，这是浏览器的限制。请把本页添加到主屏幕并留在后台，再点“开启系统通知”，页面在后台标签页时也能弹提醒。',
+    g3t:'大字版', g3d:'给长辈用的：点一下整页字号和按钮一起放大，再点一次恢复标准大小。',
+    g4t:'使用指南', g4d:'随时点这里重新播放这段逐步讲解，不用担心第一次没记住。',
+    g5t:'定位与今日天气', g5d:'可以用当前位置，也可以手动输入城市名；会自动刷新，看天气顺便提醒穿暖和点。',
+    g6t:'第一步：写清药名', g6d:'填药物的名字，例如“降压片”，方便在提醒列表里一眼认出来。',
+    g7t:'第二步：用量与提醒时间', g7d:'写清一次吃多少，例如“1 片”；提醒时间可以加多个，早中晚各一次都可以。',
+    g8t:'第三步：持续天数与开始日期', g8d:'填持续吃多少天、从哪天开始，保存后会自动排好每天的提醒。',
+    g9t:'第四步：随时修改', g9d:'药物清单里点“编辑”就能改药名、用量、时间或天数，不用删掉重录；今天已经记录的服药情况会跟着一起对应好，过去的日子不动。',
+    g10t:'今日提醒与真实记录', g10d:'到点前 5 分钟响铃并循环，关掉即记下真实的服药时刻；超过 30 分钟没吃会标红闪烁。页面重新打开时，错过的提醒会集中列出来让你补记。',
+    g11t:'服药记录、补记与导出', g11d:'记录可切近 7 天 / 近 30 天 / 全部。忘了记就点“＋补记”，选任意过去日期补上；想留存或给医生看，点“导出 CSV”或“导出文本”。页面最下方还能看到本机和全局的使用次数。'
+  },
+  en: {
+    title:'Medicine Reminder', sub:'On time, every dose',
+    guide:'Guide', lang:'中文', seniorOn:'A+ Large', seniorOff:'A− Normal',
+    lunarTag:'Lunar', todayTag:'Today', nextTerm:'Next term', termAfter:'in {{n}} day(s)',
+
+    alertTitle:'Reminder reliability',
+    alertNote:'A web page cannot ring once it is fully closed — that is a browser limit. Add this page to your Home Screen and keep it in the background; then turn on system notifications so alerts appear even when the page is a background tab.',
+    notifyAsk:'Enable notifications', notifyOnShort:'Notifications on ✓', notifyBlocked:'Notifications blocked',
+    notifyNoSupport:'Notifications unsupported here', notifyOn:'System notifications enabled', notifyAlready:'Notifications are already on',
+    notifyDenied:'Notification permission denied — allow it in your browser settings',
+    notifyTestBody:'Notifications work — you will be alerted on time',
+    notifyDoseTitle:'Time for your medicine', notifyDoseBody:'{{name}} {{dose}} ({{time}})',
+    notifyMissTitle:'Missed dose', notifyMissBody:'{{name}} at {{time}} is not logged yet — take it soon',
+    wakeOn:'Screen on: ON', wakeOff:'Screen on: OFF', noWakeSupport:'Screen wake lock unsupported here',
+    soundBtn:'Test sound', soundOk:'You heard a beep — sound is working', soundFail:'Could not play sound — check silent mode / media volume',
+    wakeNote:'While doses are still pending today, this page tries to keep the screen awake (only when visible) so the phone does not suspend it. It releases automatically once everything is logged, to save battery.',
+
+    catchTitle:'Missed reminders', catchSub:'{{n}} reminder(s) came due while the page was closed or in the background — please confirm what actually happened',
+    catchTip:'Tap “Taken” to enter the real time; Missed / Skipped just records the status.',
+    catchLater:'Later', catchDone:'Done',
+    catchToday:'Today', catchYest:'Yesterday',
+
+    wxTitle:'Today\'s weather', wxLocate:'📍 Use my location', wxManual:'🔍 Pick a city', wxRefresh:'↻ Refresh',
+    wxPrompt:'Tap a button below to load local weather', wxLoading:'Loading weather…', wxFail:'Weather unavailable, try later',
+    wxNoCity:'City not found — try another name', wxNoGeo:'Geolocation unsupported here — please type a city',
+    wxCityPh:'Type a city, e.g. Beijing / Shanghai', myLocation:'My location',
+    wxHiLo:'Hi/Lo', wxHum:'Humidity', wxFeels:'Feels', wxWind:'Wind', wxUpdated:'Updated',
+    addTitle:'Add a medicine', editTitle:'Edit medicine', fName:'Medicine name', fDose:'Dose per take',
+    fTimes:'Reminder times (multiple allowed)', addTime:'+ Add time', fDays:'Days in a row', fStart:'Start date',
+    save:'Save', saveEdit:'Save changes', cancelEdit:'Cancel editing', dayUnit:' d',
+    todayTitle:'Today\'s reminders', medsTitle:'My medicines', edit:'Edit', del:'Delete',
+    noMeds:'No medicine yet — add one above', emptyToday:'Nothing to take today',
+    quickTaken:'Taken', quickEdit:'Edit', extraTag:'Plan changed',
+    statusDue:'Pending', statusTaken:'Taken', statusMissed:'Missed', statusSkipped:'Skipped', statusNone:'Not logged',
+    takenAtTpl:'Taken · at {{t}}', statusMissedTpl:'Missed · not taken',
+    allDone:'All done on time today 🎉',
+    recTitle:'Dose record', recSub:'{{name}} · {{date}} {{time}}', backSub:'Back-fill a dose — pick any past date',
+    recDate:'Date', recMed:'Medicine', recName:'Name', recPlanTime:'Planned time', recActualTime:'Actual time taken',
+    optOther:'Other (type a name)',
+    recTip:'Enter what really happened. Leave the actual time empty to use the planned time. Crossing midnight is detected automatically.',
+    recClear:'Clear record', recCancel:'Cancel', recSave:'Save',
+    recTaken:'Taken', recMissed:'Missed', recSkipped:'Skipped',
+    logTitle:'Dose log', logEmpty:'No records yet',
+    logRange7:'Last 7 days', logRange30:'Last 30 days', logRangeAll:'All',
+    logAdd:'＋ Back-fill', logCsv:'Export CSV', logTxt:'Export text',
+    logSummaryRange:'Last {{n}} days: {{a}} taken · {{b}} missed · {{c}} skipped',
+    logSummaryAll:'All records: {{a}} taken · {{b}} missed · {{c}} skipped',
+    deletedMed:'Deleted medicine',
+    srcAlarm:'Alarm closed', srcManual:'Manual', srcAuto:'Auto-detected', srcBack:'Back-filled', srcMigrated:'Legacy data',
+    csvDate:'Date', csvWeek:'Weekday', csvMed:'Medicine', csvPlan:'Planned time', csvStatus:'Status', csvActual:'Actual time', csvSrc:'Source',
+    txtHead:'Medicine log', txtExported:'Exported', txtSummary:'Total',
+    filePrefix:'medicine-log',
+    errFuture:'Cannot log a future date', errSeg:'Please choose a status', errName:'Please enter a name',
+    errMedName:'Please enter the medicine name', errTime:'Please add at least one reminder time', errDays:'Days must be at least 1',
+    overwrite:'The existing record for that time was overwritten',
+    exportEmpty:'No records to export', exportFail:'Export failed — try another browser', exportDone:'Exported {{n}} records',
+
+    statTitle:'Usage stats', statLocalLbl:'Uses on this device', statGlobalLbl:'Global total',
+    statLoading:'Fetching the global number…', statOk:'Synced · {{t}}',
+    statFail:'Global number unavailable (offline or service down). Tap Retry.', statRetry:'Retry',
+    statNote:'The global number comes from a public counter service — one increment request per open. No personal data is sent, and nothing here affects the app.',
+
+    ringTitle:'Time for your medicine', ringMsg:'{{name}}　{{dose}}', ringTaken:'Taken', ringSnooze:'Snooze',
+    missTitle:'Missed dose', missMsg:'为了保证您的身体健康，一定要遵医嘱按时服药！', missOk:'Got it',
+    cheerTitle:'All done today!', cheerMsg:'Great job — every dose taken on time',
+    cheerStreak:'{{n}}-day streak', cheerOk:'Nice',
+    footTip:'Missed doses blink in red; tap any record to set the real time you took it.',
+    bootFail:'Startup error: {{m}}',
+    gSkip:'Skip', gNext:'Next', gPrev:'Back', gDone:'Get started', gStep:'Step {{i}} / {{n}}',
+    g1t:'Date, time & lunar calendar', g1d:'Shows local time, date, the Chinese lunar date and the solar term — “today” or how many days to go.',
+    g2t:'Reminder reliability (read this first)', g2d:'A web page stops ringing once fully closed — that is a browser limit. Add this page to your Home Screen, keep it in the background, and turn on system notifications so alerts still appear from a background tab.',
+    g3t:'Large-text mode', g3d:'For older users: one tap enlarges all text and buttons; tap again to go back.',
+    g4t:'Guide', g4d:'Replay this step-by-step tour anytime.',
+    g5t:'Location & weather', g5d:'Use your position or type a city name; it refreshes automatically.',
+    g6t:'Step 1: name', g6d:'Enter the medicine name, e.g. “Blood pressure pill”.',
+    g7t:'Step 2: dose & times', g7d:'How much per take, e.g. “1 tablet”; add as many reminder times as you need.',
+    g8t:'Step 3: days & start date', g8d:'Set how many days and the start date — every dose gets scheduled.',
+    g9t:'Step 4: edit anytime', g9d:'Tap “Edit” in My medicines to change name, dose, times or days. Today\'s records follow along; past days are never rewritten.',
+    g10t:'Today list & true records', g10d:'Rings 5 minutes early and loops; closing it logs the real time taken. Over 30 minutes late the row blinks red. When you reopen the page, missed reminders are listed together so you can log them.',
+    g11t:'Log, back-fill & export', g11d:'View the last 7 / 30 days or everything. Forgot to log? Tap “＋ Back-fill” and pick any past date. Export as CSV or text anytime — the bottom of the page also shows local and global usage counts.'
+  }
+};
+
+var lang = 'zh';
+try {
+  var savedLang = localStorage.getItem(LANG_KEY);
+  lang = savedLang || (((navigator.language||'zh').toLowerCase().indexOf('zh') === 0) ? 'zh' : 'en');
+} catch (e) {}
+
+function t(k){ var d = DICT[lang] || DICT.zh; return (d[k] !== undefined) ? d[k] : (DICT.zh[k] !== undefined ? DICT.zh[k] : k); }
+function fmt(s, o){ return String(s).replace(/\{\{(\w+)\}\}/g, function(_, k){ return o[k] !== undefined ? o[k] : ''; }); }
+
+/* ===================== 卡通大夫 ===================== */
+var DOC_SVG =
+'<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">' +
+  '<circle cx="60" cy="60" r="56" fill="#e9f1ff"/>' +
+  '<path d="M16 120c0-24 20-37 44-37s44 13 44 37z" fill="#ffffff"/>' +
+  '<path d="M46 88l14 12 14-12-6-8H52z" fill="#dfe9fb"/>' +
+  '<circle cx="60" cy="50" r="26" fill="#ffd9b8"/>' +
+  '<path d="M33 46c0-17 12-28 27-28s27 11 27 28c0-7-11-12-27-12s-27 5-27 12z" fill="#4a3728"/>' +
+  '<circle cx="50" cy="51" r="3.4" fill="#22304a"/><circle cx="70" cy="51" r="3.4" fill="#22304a"/>' +
+  '<circle cx="50" cy="51" r="8" fill="none" stroke="#22304a" stroke-width="2.2"/>' +
+  '<circle cx="70" cy="51" r="8" fill="none" stroke="#22304a" stroke-width="2.2"/>' +
+  '<path d="M62 50h-4" stroke="#22304a" stroke-width="2.2"/>' +
+  '<path d="M52 64c5 5 11 5 16 0" stroke="#22304a" stroke-width="2.6" fill="none" stroke-linecap="round"/>' +
+  '<path d="M28 96c4-10 10-14 16-16" stroke="#22304a" stroke-width="2.6" fill="none" stroke-linecap="round"/>' +
+  '<circle cx="26" cy="99" r="4.5" fill="#22304a"/>' +
+'</svg>';
+
+/* ===================== 状态 ===================== */
+var S = { meds: [], log: {}, celebrated: {} };
+var editingId = null;
+var logRange = 7;
+var recEditKey = null;
+var recStatus = '';
+var lastMiss = {}, nearMiss = {}, rowMap = {};
+var ringKey = null, missTimer = null, cfTimer = null;
+var ac = null, beepTimer = null;
+var wxData = null;
+var senior = false;
+var stat = { local:0, day:'' };
+var swReg = null, wakeLock = null, wakeWanted = true;
+var catchItems = [], catchSnoozeUntil = 0, tickCount = 0;
+
+try { wakeWanted = localStorage.getItem(WAKE_KEY) !== '0'; } catch (e) {}
+
+function load(){
+  try {
+    var raw = localStorage.getItem(STORE_KEY);
+    if (!raw) return;
+    var o = JSON.parse(raw);
+    S.meds = o.meds || [];
+    S.celebrated = o.celebrated || {};
+    if (o.log) S.log = o.log;
+    if (o.st) {
+      Object.keys(o.st).forEach(function(k){
+        if (S.log[k]) return;
+        var v = o.st[k];
+        S.log[k] = (typeof v === 'string') ? { st:v, at:null, src:'migrated' } : v;
+      });
+    }
+    S.meds.forEach(function(m){
+      if (!m.times) m.times = [];
+      if (!m.days || m.days < 1) m.days = 1;
+      if (!m.start) m.start = dk(new Date());
+    });
+  } catch (e) {}
+}
+function save(){
+  var cut = dk(new Date(Date.now() - LOG_KEEP_DAYS*86400000));
+  Object.keys(S.log).forEach(function(k){ if (k.split('|')[0] < cut) delete S.log[k]; });
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({ v:3, meds:S.meds, log:S.log, celebrated:S.celebrated }));
+  } catch (e) {}
+}
+function putRec(k, o){
+  if (o) S.log[k] = o; else delete S.log[k];
+  save();
+}
+function recNew(st, src, at, name){
+  var o = { st:st, src:src, at: (at || null) };
+  if (name) o.n = name;
+  return o;
+}
+function medById(id){
+  for (var i = 0; i < S.meds.length; i++) if (S.meds[i].id === id) return S.meds[i];
+  return null;
+}
+function nameOf(id, r){
+  var m = medById(id);
+  if (m) return m.name;
+  if (r && r.n) return r.n;
+  return t('deletedMed');
+}
+
+/* ===================== 系统通知 ===================== */
+function notifySupported(){ return (typeof window.Notification !== 'undefined'); }
+function notifyPermission(){
+  if (!notifySupported()) return 'unsupported';
+  return window.Notification.permission || 'default';
+}
+/* 有 sw.js 时优先用它（Android Chrome 必须），否则退回 new Notification（桌面浏览器） */
+function notifyInit(){
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.register) {
+      navigator.serviceWorker.register('sw.js')
+        .then(function(r){ swReg = r; })
+        .catch(function(){ swReg = null; });
+    }
+  } catch (e) { swReg = null; }
+}
+function notifyAllow(){
+  if (!notifySupported()) { toast(t('notifyNoSupport')); return; }
+  var p = notifyPermission();
+  if (p === 'granted') { toast(t('notifyAlready')); return; }
+  if (p === 'denied') { toast(t('notifyDenied')); return; }
+  try {
+    window.Notification.requestPermission().then(function(res){
+      notifyUpdateUI();
+      if (res === 'granted') {
+        toast(t('notifyOn'));
+        notifyFire(t('ringTitle'), t('notifyTestBody'));
+      } else {
+        toast(t('notifyDenied'));
+      }
+    });
+  } catch (e) {
+    /* 老浏览器用回调式 API */
+    window.Notification.requestPermission(function(res){
+      notifyUpdateUI();
+      if (res === 'granted') { toast(t('notifyOn')); notifyFire(t('ringTitle'), t('notifyTestBody')); }
+    });
+  }
+}
+function notifyFire(title, body){
+  if (!notifySupported() || notifyPermission() !== 'granted') return;
+  var opts = { body: body, tag: 'med-reminder', renotify: true, requireInteraction: true, silent: false };
+  try {
+    if (swReg && swReg.showNotification) { swReg.showNotification(title, opts); return; }
+  } catch (e) {}
+  try {
+    var n = new window.Notification(title, opts);
+    n.onclick = function(){ try { window.focus(); } catch (e2) {} try { n.close(); } catch (e3) {} };
+    setTimeout(function(){ try { n.close(); } catch (e4) {} }, 60000);
+  } catch (e5) {}
+}
+function notifyDose(d){
+  notifyFire(t('notifyDoseTitle'), fmt(t('notifyDoseBody'), { name:d.med.name, dose:d.med.dose || '', time:d.time }));
+}
+function notifyMiss(d){
+  notifyFire(t('notifyMissTitle'), fmt(t('notifyMissBody'), { name:d.med.name, time:d.time }));
+}
+function notifyUpdateUI(){
+  var b = el('notifyBtn');
+  if (!b) return;
+  var p = notifyPermission();
+  b.textContent = (p === 'granted') ? t('notifyOnShort')
+                : (p === 'denied') ? t('notifyBlocked')
+                : (p === 'unsupported') ? t('notifyNoSupport')
+                : t('notifyAsk');
+}
+
+/* ===================== 屏幕常亮 ===================== */
+function wakeSupported(){ return !!(navigator.wakeLock && navigator.wakeLock.request); }
+function wakePending(){
+  var list = todayDoses(dk(new Date())), i;
+  for (i = 0; i < list.length; i++) if (!list[i].r) return true;
+  return false;
+}
+function wakeWantNow(){
+  return wakeWanted && wakeSupported() && !document.hidden && wakePending();
+}
+function wakeAcquire(){
+  if (wakeLock || !wakeWantNow()) return;
+  try {
+    navigator.wakeLock.request('screen').then(function(l){
+      wakeLock = l;
+      l.addEventListener('release', function(){ wakeLock = null; });
+    }).catch(function(){ wakeLock = null; });
+  } catch (e) {}
+}
+function wakeRelease(){
+  try { if (wakeLock) { wakeLock.release(); wakeLock = null; } } catch (e) {}
+}
+function wakeTick(){
+  if (wakeWantNow()) wakeAcquire(); else wakeRelease();
+}
+function wakeUpdateUI(){
+  var b = el('wakeBtn');
+  if (!b) return;
+  b.textContent = wakeWanted ? t('wakeOn') : t('wakeOff');
+  if (!wakeSupported()) b.textContent = t('noWakeSupport');
+}
+
+/* ===================== 声音 ===================== */
+function audioUnlock(){
+  try {
+    if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended' && ac.resume) ac.resume();
+  } catch (e) {}
+}
+function beepOnce(){
+  try {
+    audioUnlock();
+    if (!ac) return;
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine'; o.frequency.value = 880;
+    o.connect(g); g.connect(ac.destination);
+    var t0 = ac.currentTime;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.3, t0 + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.5);
+    o.start(t0); o.stop(t0 + 0.55);
+  } catch (e) {}
+}
+function startBeep(){ stopBeep(); beepOnce(); beepTimer = setInterval(beepOnce, 1500); }
+function stopBeep(){ if (beepTimer) { clearInterval(beepTimer); beepTimer = null; } }
+
+/* ===================== 使用次数统计 ===================== */
+function statLoad(){
+  try {
+    var o = JSON.parse(localStorage.getItem(STAT_KEY) || 'null');
+    if (o) { stat.local = o.local || 0; stat.day = o.day || ''; }
+  } catch (e) {}
+}
+function statSave(){
+  try { localStorage.setItem(STAT_KEY, JSON.stringify({ local:stat.local, day:stat.day })); } catch (e) {}
+}
+function statCountLocal(){
+  stat.local = (stat.local || 0) + 1;
+  statSave();
+  el('statLocal').textContent = stat.local;
+}
+function statNeedReport(){
+  if (!COUNT_ONCE_PER_DAY) return true;
+  var today = dk(new Date());
+  if (stat.day === today) return false;
+  stat.day = today; statSave();
+  return true;
+}
+function statUrl(act){
+  return COUNT_API + '/' + act + '/' + encodeURIComponent(COUNT_NS) + '/' + encodeURIComponent(COUNT_KEY);
+}
+function statRequest(url){
+  return new Promise(function(resolve, reject){
+    var done = false;
+    var timer = setTimeout(function(){ if (!done) { done = true; reject(new Error('timeout')); } }, COUNT_TIMEOUT_MS);
+    fetch(url, { cache:'no-store' })
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if (done) return;
+        done = true; clearTimeout(timer);
+        var v = (j && j.value !== undefined) ? j.value : (typeof j === 'number' ? j : null);
+        if (v === null) reject(new Error('bad response')); else resolve(v);
+      })
+      .catch(function(err){ if (!done) { done = true; clearTimeout(timer); reject(err); } });
+  });
+}
+function statUpdate(){
+  el('statGlobal').textContent = '…';
+  el('statNote').textContent = t('statLoading');
+  el('statRetry').style.display = 'none';
+
+  var p = statNeedReport() ? statRequest(statUrl('hit')) : statRequest(statUrl('get'));
+  p.then(function(v){
+    el('statGlobal').textContent = v;
+    var now = new Date();
+    el('statNote').textContent = fmt(t('statOk'), { t: pad(now.getHours()) + ':' + pad(now.getMinutes()) });
+  }).catch(function(){
+    el('statGlobal').textContent = '—';
+    el('statNote').textContent = t('statFail');
+    el('statRetry').style.display = 'inline-block';
+  });
+}
+function statRefreshNote(){
+  if (el('statGlobal').textContent === '…') el('statNote').textContent = t('statLoading');
+  else if (el('statRetry').style.display === 'inline-block') el('statNote').textContent = t('statFail');
+  else el('statNote').textContent = t('statNote');
+}
+
+/* ===================== 语言 / 大字版 ===================== */
+try { senior = localStorage.getItem(SENIOR_KEY) === '1'; } catch (e) {}
+
+function applySenior(){
+  document.documentElement.classList.toggle('senior', senior);
+  el('seniorBtn').textContent = senior ? t('seniorOff') : t('seniorOn');
+}
+function syncFormLabels(){
+  el('addTitle').textContent = editingId ? t('editTitle') : t('addTitle');
+  el('saveMed').textContent  = editingId ? t('saveEdit')  : t('save');
+  el('cancelEdit').textContent = t('cancelEdit');
+  el('cancelEdit').style.display = editingId ? 'block' : 'none';
+}
+function applyLang(){
+  document.documentElement.lang = (lang === 'zh') ? 'zh-CN' : 'en';
+  el('appTitle').textContent = t('title');
+  el('appSub').textContent = t('sub');
+  el('guideBtn').textContent = t('guide');
+  el('langBtn').textContent = t('lang');
+
+  el('alertTitle').textContent = t('alertTitle');
+  el('alertNote').textContent = t('alertNote');
+  el('wakeNote').textContent = t('wakeNote');
+  el('soundBtn').textContent = t('soundBtn');
+  notifyUpdateUI();
+  wakeUpdateUI();
+
+  el('wxTitle').textContent = t('wxTitle');
+  el('wxLocate').textContent = t('wxLocate');
+  el('wxManual').textContent = t('wxManual');
+  el('wxRefresh').textContent = t('wxRefresh');
+  el('wxCityGo').textContent = (lang === 'en') ? 'OK' : '确定';
+  el('wxCityInput').placeholder = t('wxCityPh');
+  el('lbName').textContent = t('fName');
+  el('lbDose').textContent = t('fDose');
+  el('lbTimes').textContent = t('fTimes');
+  el('addTime').textContent = t('addTime');
+  el('lbDays').textContent = t('fDays');
+  el('lbStart').textContent = t('fStart');
+  el('todayTitle').textContent = t('todayTitle');
+  el('medsTitle').textContent = t('medsTitle');
+  el('logTitle').textContent = t('logTitle');
+  el('footTip').textContent = t('footTip');
+  el('ringTitle').textContent = t('ringTitle');
+  el('ringTaken').textContent = t('ringTaken');
+  el('ringSnooze').textContent = t('ringSnooze');
+  el('missTitle').textContent = t('missTitle');
+  el('missMsg').textContent = t('missMsg');
+  el('missOk').textContent = t('missOk');
+  el('cheerOk').textContent = t('cheerOk');
+  el('gPrev').textContent = t('gPrev');
+  el('gSkip').textContent = t('gSkip');
+  if (!gd.active) el('gNext').textContent = t('gNext');
+  el('allDone').textContent = t('allDone');
+
+  el('catchTitle').textContent = t('catchTitle');
+  el('catchTip').textContent = t('catchTip');
+  el('catchLater').textContent = t('catchLater');
+  el('catchDone').textContent = t('catchDone');
+
+  el('logRange').querySelector('[data-r="7"]').textContent = t('logRange7');
+  el('logRange').querySelector('[data-r="30"]').textContent = t('logRange30');
+  el('logRange').querySelector('[data-r="0"]').textContent = t('logRangeAll');
+  el('logAdd').textContent = t('logAdd');
+  el('logCsv').textContent = t('logCsv');
+  el('logTxt').textContent = t('logTxt');
+
+  el('recTitle').textContent = t('recTitle');
+  el('recDateLabel').textContent = t('recDate');
+  el('recMedLabel').textContent = t('recMed');
+  el('recNameLabel').textContent = t('recName');
+  el('recPlanLabel').textContent = t('recPlanTime');
+  el('recAtLabel').textContent = t('recActualTime');
+  el('recTip').textContent = t('recTip');
+  el('recClear').textContent = t('recClear');
+  el('recCancel').textContent = t('recCancel');
+  el('recSave').textContent = t('recSave');
+  el('recSeg').querySelector('[data-s=taken]').textContent = t('recTaken');
+  el('recSeg').querySelector('[data-s=missed]').textContent = t('recMissed');
+  el('recSeg').querySelector('[data-s=skipped]').textContent = t('recSkipped');
+
+  el('statTitle').textContent = t('statTitle');
+  el('statLocalLbl').textContent = t('statLocalLbl');
+  el('statGlobalLbl').textContent = t('statGlobalLbl');
+  el('statRetry').textContent = t('statRetry');
+
+  each(el('logRange').querySelectorAll('button'), function(b){
+    b.classList.toggle('on', parseInt(b.getAttribute('data-r'), 10) === logRange);
+  });
+
+  syncFormLabels();
+  applySenior();
+}
+
+/* ===================== 日期 / 农历 / 节气 ===================== */
+var WD_ZH = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+var WD_EN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function wdText(d){ return (lang === 'en') ? WD_EN[d.getDay()] : WD_ZH[d.getDay()]; }
+
+var LUNAR_M = ['正月','二月','三月','四月','五月','六月','七月','八月','九月','十月','冬月','腊月'];
+function cnDay(n){
+  n = parseInt(n, 10);
+  if (isNaN(n) || n < 1 || n > 30) return '';
+  var d = ['一','二','三','四','五','六','七','八','九','十'];
+  if (n <= 10) return '初' + d[n-1];
+  if (n < 20) return '十' + d[n-11];
+  if (n === 20) return '二十';
+  if (n < 30) return '廿' + d[n-21];
+  return '三十';
+}
+
+var TERMS = ['小寒','大寒','立春','雨水','惊蛰','春分','清明','谷雨','立夏','小满','芒种','夏至',
+             '小暑','大暑','立秋','处暑','白露','秋分','寒露','霜降','立冬','小雪','大雪','冬至'];
+var TERMS_EN = ['Minor Cold','Major Cold','Start of Spring','Rain Water','Awakening of Insects','Spring Equinox',
+                'Pure Brightness','Grain Rain','Start of Summer','Grain Full','Grain in Ear','Summer Solstice',
+                'Minor Heat','Major Heat','Start of Autumn','End of Heat','White Dew','Autumn Equinox',
+                'Cold Dew','Frost\'s Descent','Start of Winter','Minor Snow','Major Snow','Winter Solstice'];
+var TERM_M = [1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12];
+var TERM_C = [5.4055,20.12,3.87,18.73,5.63,20.646,4.81,20.1,5.52,21.04,5.678,21.37,
+              7.108,22.83,7.5,23.13,7.646,23.042,8.318,23.438,7.438,22.36,7.18,21.94];
+var TERM_EXC = { '小寒':{2019:1}, '大寒':{2082:1}, '雨水':{2026:-1}, '春分':{2084:1},
+                 '小满':{2008:1}, '小暑':{2016:1}, '立秋':{2002:1}, '寒露':{2088:1},
+                 '霜降':{2089:1}, '立冬':{2089:1}, '冬至':{2021:-1} };
+
+function termDay(y, i){
+  var Y = y % 100, L = Math.floor(Y / 4);
+  var day = Math.floor(Y * 0.2422 + TERM_C[i]) - L;
+  var ex = TERM_EXC[TERMS[i]];
+  if (ex && ex[y]) day += ex[y];
+  return day;
+}
+function termName(i){ return (lang === 'en') ? TERMS_EN[i] : TERMS[i]; }
+function termInfo(now){
+  var list = [], y = now.getFullYear(), yy, i, k;
+  for (yy = y - 1; yy <= y + 1; yy++) {
+    for (i = 0; i < 24; i++) {
+      var d = termDay(yy, i);
+      list.push({ y:yy, i:i, m:TERM_M[i], d:d, date:new Date(yy, TERM_M[i]-1, d) });
+    }
+  }
+  var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  var cur = null, next = null;
+  for (k = 0; k < list.length; k++) {
+    var x = list[k], diff = Math.round((x.date - today) / 86400000);
+    if (diff === 0) cur = x;
+    if (diff > 0 && (!next || x.date < next.date)) next = x;
+  }
+  return { cur:cur, next:next, today:today };
+}
+function termText(now){
+  var info = termInfo(now);
+  if (info.cur) return t('todayTag') + ' ' + termName(info.cur.i);
+  if (!info.next) return '—';
+  var days = Math.round((info.next.date - info.today) / 86400000);
+  return t('nextTerm') + ' ' + termName(info.next.i) + ' · ' + info.next.m + '/' + info.next.d +
+         '（' + fmt(t('termAfter'), { n:days }) + '）';
+}
+function lunarText(d){
+  try {
+    if (!window.Intl || !Intl.DateTimeFormat) return '';
+    var f = new Intl.DateTimeFormat('zh-CN-u-ca-chinese', { year:'numeric', month:'long', day:'numeric' });
+    if (f.resolvedOptions) {
+      var cal = f.resolvedOptions().calendar || '';
+      if (cal && cal !== 'chinese') return '';
+    }
+    if (!f.formatToParts) return '';
+    var parts = f.formatToParts(d), o = {}, i;
+    for (i = 0; i < parts.length; i++) o[parts[i].type] = parts[i].value;
+    var y = o.yearName || '', m = o.month || '', dd = o.day || '';
+    if (/^\d/.test(m)) { var mm = LUNAR_M[parseInt(m, 10) - 1]; if (mm) m = mm; }
+    if (/^\d/.test(dd)) { var dn = cnDay(dd); if (dn) dd = dn; }
+    if (!y && o.relatedYear) y = o.relatedYear;
+    if (!m || !dd) return '';
+    var out = '';
+    if (y) out += (/年$/.test(y) ? y : y + '年');
+    return out + m + dd;
+  } catch (e) { return ''; }
+}
+function renderClock(now){
+  el('clkTime').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+  if (lang === 'zh') {
+    el('clkDate').textContent = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日 ' + WD_ZH[now.getDay()];
+  } else {
+    el('clkDate').textContent = now.toLocaleDateString('en-US', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+  }
+  var l = lunarText(now);
+  el('clkLunar').textContent = l ? (t('lunarTag') + ' ' + l) : '';
+  el('clkTerm').textContent = termText(now);
+}
+
+/* ===================== 排期与记录读取 ===================== */
+function activeOn(med, dstr){
+  var st = parseD(med.start), d = parseD(dstr);
+  var diff = Math.round((d - st) / 86400000);
+  return diff >= 0 && diff < med.days;
+}
+function todayDoses(dstr){
+  var out = [];
+  S.meds.forEach(function(m){
+    if (!activeOn(m, dstr)) return;
+    m.times.forEach(function(tm){
+      var k = doseKey(dstr, m.id, tm);
+      out.push({ k:k, med:m, time:tm, date:dstr, r:S.log[k] || null, extra:false });
+    });
+  });
+  out.sort(function(a, b){ return hm2min(a.time) - hm2min(b.time); });
+  return out;
+}
+function todayExtras(dstr){
+  var out = [];
+  Object.keys(S.log).forEach(function(k){
+    var p = k.split('|');
+    if (p[0] !== dstr) return;
+    var m = medById(p[1]);
+    if (!m || m.times.indexOf(p[2]) > -1) return;
+    out.push({ k:k, med:m, time:p[2], date:dstr, r:S.log[k], extra:true });
+  });
+  out.sort(function(a, b){ return hm2min(a.time) - hm2min(b.time); });
+  return out;
+}
+function statusText(d){
+  var st = d.r ? d.r.st : '';
+  if (st === 'taken') return fmt(t('takenAtTpl'), { t: atText(d.r.at) });
+  if (st === 'missed') return t('statusMissedTpl');
+  if (st === 'skipped') return t('statusSkipped');
+  return t('statusDue');
+}
+function stText(st){
+  return st === 'taken' ? t('statusTaken')
+       : st === 'missed' ? t('statusMissed')
+       : st === 'skipped' ? t('statusSkipped') : t('statusNone');
+}
+function srcText(s){
+  return s === 'alarm' ? t('srcAlarm')
+       : s === 'manual' ? t('srcManual')
+       : s === 'auto' ? t('srcAuto')
+       : s === 'back' ? t('srcBack') : t('srcMigrated');
+}
+
+/* ===================== 今日列表 ===================== */
+function renderToday(now){
+  now = now || new Date();
+  var today = dk(now);
+  var list = todayDoses(today).concat(todayExtras(today));
+  list.sort(function(a, b){ return hm2min(a.time) - hm2min(b.time); });
+  rowMap = {};
+
+  var box = el('list'), h = '';
+  if (!S.meds.length && !list.length) {
+    h = '<div class="empty">' + esc(t('noMeds')) + '</div>';
+  } else if (!list.length) {
+    h = '<div class="empty">' + esc(t('emptyToday')) + '</div>';
+  } else {
+    list.forEach(function(d){
+      rowMap[d.k] = d;
+      var st = d.r ? d.r.st : '';
+      var cls = d.extra ? 'extra' : (st === 'taken' ? 'ok' : (st === 'missed' ? 'bad' : ''));
+      h += '<div class="row ' + cls + '" data-k="' + esc(d.k) + '">' +
+             '<div class="rt">' + d.time + '</div>' +
+             '<div class="rm"><div class="rname">' + esc(d.med.name) + '</div>' +
+               '<div class="rdose">' + esc(d.med.dose || '') + '</div>' +
+               '<div class="rst">' + esc(d.extra ? (t('extraTag') + ' · ' + statusText(d)) : statusText(d)) + '</div>' +
+             '</div>' +
+             '<button class="tick" data-k="' + esc(d.k) + '">' +
+               esc(d.r ? t('quickEdit') : t('quickTaken')) + '</button>' +
+           '</div>';
+    });
+    box.innerHTML = h;
+    each(box.querySelectorAll('.row'), function(r){
+      r.onclick = function(){ var d = rowMap[r.getAttribute('data-k')]; if (d) openRecFromRow(d); };
+    });
+    each(box.querySelectorAll('.tick'), function(b){
+      b.onclick = function(ev){
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        var k = b.getAttribute('data-k'), d = rowMap[k];
+        if (!d) return;
+        if (d.r) { openRecFromRow(d); return; }
+        putRec(k, recNew('taken', 'manual', Date.now(), d.med.name));
+        renderToday(new Date()); renderLog(); checkDone(new Date());
+      };
+    });
+  }
+  if (!list.length) box.innerHTML = h;
+
+  var plan = todayDoses(today), all = plan.length > 0;
+  for (var i = 0; i < plan.length; i++) {
+    if (!plan[i].r || plan[i].r.st !== 'taken') { all = false; break; }
+  }
+  el('allDone').style.display = all ? 'block' : 'none';
+}
+
+/* ===================== 药物清单 ===================== */
+function renderMeds(){
+  var box = el('medList');
+  if (!S.meds.length) { box.innerHTML = '<div class="empty">' + esc(t('noMeds')) + '</div>'; return; }
+  var h = '';
+  S.meds.forEach(function(m){
+    var isEditing = (m.id === editingId);
+    h += '<div class="mrow"' + (isEditing ? ' style="background:#f6f9ff;border-radius:.5rem;padding-left:.5rem;padding-right:.5rem"' : '') + '>' +
+           '<div class="mn">' + esc(m.name) +
+             '<div class="md">' + esc(m.times.join('、')) + ' · ' + m.days + t('dayUnit') +
+             ' · ' + esc(m.start) + (m.dose ? ' · ' + esc(m.dose) : '') + '</div>' +
+           '</div>' +
+           '<button class="mbtn edit-b" data-id="' + esc(m.id) + '">' + esc(t('edit')) + '</button>' +
+           '<button class="mbtn del" data-id="' + esc(m.id) + '">' + esc(t('del')) + '</button>' +
+         '</div>';
+  });
+  box.innerHTML = h;
+  each(box.querySelectorAll('.edit-b'), function(b){
+    b.onclick = function(){ startEdit(b.getAttribute('data-id')); };
+  });
+  each(box.querySelectorAll('.del'), function(b){
+    b.onclick = function(){
+      var id = b.getAttribute('data-id');
+      S.meds = S.meds.filter(function(m){ return m.id !== id; });
+      if (editingId === id) endEdit();
+      save(); renderMeds(); renderToday(new Date()); renderLog();
+      wakeTick();
+    };
+  });
+}
+
+/* ===================== 服药记录 ===================== */
+function dayLabel(ds){
+  var d = parseD(ds), today = dk(new Date()), y = dk(new Date(Date.now() - 86400000));
+  if (ds === today) return (lang === 'en') ? 'Today' : '今天';
+  if (ds === y) return (lang === 'en') ? 'Yesterday' : '昨天';
+  if (lang === 'en') return d.toLocaleDateString('en-US', { month:'short', day:'numeric', weekday:'short' });
+  return (d.getMonth()+1) + '月' + d.getDate() + '日 ' + WD_ZH[d.getDay()];
+}
+function logRows(){
+  var rows = [];
+  Object.keys(S.log).forEach(function(k){
+    var p = k.split('|');
+    rows.push({ k:k, date:p[0], medId:p[1], time:p[2], r:S.log[k], name:nameOf(p[1], S.log[k]) });
+  });
+  rows.sort(function(a, b){
+    if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return hm2min(a.time) - hm2min(b.time);
+  });
+  return rows;
+}
+function visibleRows(){
+  var rows = logRows();
+  if (logRange > 0) {
+    var cut = dk(new Date(Date.now() - (logRange - 1) * 86400000));
+    rows = rows.filter(function(x){ return x.date >= cut; });
+  }
+  return rows;
+}
+function renderLog(){
+  var box = el('logList'), rows = visibleRows();
+  if (!rows.length) {
+    box.innerHTML = '<div class="empty">' + esc(t('logEmpty')) + '</div>';
+  } else {
+    var byDate = {}, order = [];
+    rows.forEach(function(x){
+      if (!byDate[x.date]) { byDate[x.date] = []; order.push(x.date); }
+      byDate[x.date].push(x);
+    });
+    order.sort().reverse();
+    var h = '';
+    order.forEach(function(ds){
+      h += '<div class="lday">' + esc(dayLabel(ds)) + '</div>';
+      byDate[ds].forEach(function(x){
+        var cls = (x.r.st === 'taken') ? 'ok' : (x.r.st === 'missed' ? 'bad' : '');
+        var right = (x.r.st === 'taken') ? fmt(t('takenAtTpl'), { t: atText(x.r.at) })
+                  : (x.r.st === 'missed' ? t('statusMissed') : t('statusSkipped'));
+        h += '<div class="lrow ' + cls + '" data-k="' + esc(x.k) + '"><span class="lt">' + esc(x.time) + '</span>' +
+             '<span class="ln">' + esc(x.name) + '</span>' +
+             '<span class="ls">' + esc(right) + '</span></div>';
+      });
+    });
+    var a = 0, b = 0, c = 0;
+    rows.forEach(function(x){
+      if (x.r.st === 'taken') a++; else if (x.r.st === 'missed') b++; else if (x.r.st === 'skipped') c++;
+    });
+    h += '<div class="lsum">' + esc(logRange > 0
+          ? fmt(t('logSummaryRange'), { n:logRange, a:a, b:b, c:c })
+          : fmt(t('logSummaryAll'), { a:a, b:b, c:c })) + '</div>';
+    box.innerHTML = h;
+    each(box.querySelectorAll('.lrow'), function(r){
+      r.onclick = function(){ openRecByKey(r.getAttribute('data-k')); };
+    });
+  }
+  each(el('logRange').querySelectorAll('button'), function(bt){
+    bt.classList.toggle('on', parseInt(bt.getAttribute('data-r'), 10) === logRange);
+  });
+}
+
+/* ===================== 导出 ===================== */
+function csvCell(v){
+  var s = (v == null ? '' : String(v));
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+function downloadFile(filename, text, withBom, mime){
+  try {
+    var blob = new Blob([(withBom ? '\ufeff' : '') + text], { type: (mime || 'text/plain') + ';charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = filename; a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){
+      if (a.parentNode) a.parentNode.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 300);
+    return true;
+  } catch (e) { return false; }
+}
+function exportCsv(){
+  var rows = logRows();
+  if (!rows.length) { toast(t('exportEmpty')); return; }
+  var head = [t('csvDate'), t('csvWeek'), t('csvMed'), t('csvPlan'), t('csvStatus'), t('csvActual'), t('csvSrc')];
+  var lines = [head.map(csvCell).join(',')];
+  rows.slice().reverse().forEach(function(x){
+    var actual = (x.r.st === 'taken') ? atText(x.r.at) : '';
+    lines.push([x.date, wdText(parseD(x.date)), x.name, x.time, stText(x.r.st), actual, srcText(x.r.src)].map(csvCell).join(','));
+  });
+  var name = t('filePrefix') + '_' + dk(new Date()) + '.csv';
+  if (!downloadFile(name, lines.join('\r\n'), true, 'text/csv')) { toast(t('exportFail')); return; }
+  toast(fmt(t('exportDone'), { n: rows.length }));
+}
+function exportTxt(){
+  var rows = logRows();
+  if (!rows.length) { toast(t('exportEmpty')); return; }
+  var now = new Date();
+  var out = [];
+  out.push(t('txtHead') + ' · ' + t('txtExported') + ' ' + dk(now) + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()));
+  out.push('');
+  var cur = '', a = 0, b = 0, c = 0;
+  rows.forEach(function(x){
+    if (x.date !== cur) {
+      cur = x.date;
+      out.push(dayLabel(x.date) + '  ' + x.date);
+    }
+    var right = (x.r.st === 'taken') ? fmt(t('takenAtTpl'), { t: atText(x.r.at) })
+              : (x.r.st === 'missed' ? t('statusMissed') : t('statusSkipped'));
+    out.push('  ' + x.time + '  ' + x.name + '  —— ' + right + '（' + srcText(x.r.src) + '）');
+    if (x.r.st === 'taken') a++; else if (x.r.st === 'missed') b++; else if (x.r.st === 'skipped') c++;
+  });
+  out.push('');
+  out.push(t('txtSummary') + '：' + fmt(t('logSummaryAll'), { a:a, b:b, c:c }));
+  var name = t('filePrefix') + '_' + dk(new Date()) + '.txt';
+  if (!downloadFile(name, out.join('\r\n'), false, 'text/plain')) { toast(t('exportFail')); return; }
+  toast(fmt(t('exportDone'), { n: rows.length }));
+}
+
+/* ===================== 表单（新增 / 编辑） ===================== */
+function addTimeRow(v){
+  var row = document.createElement('div');
+  row.className = 'trow';
+  row.innerHTML = '<input type="time" value="' + (v || '08:00') + '"><button class="del">×</button>';
+  row.querySelector('.del').onclick = function(){ row.parentNode.removeChild(row); };
+  el('timeList').appendChild(row);
+}
+function clearForm(){
+  el('fName').value = ''; el('fDose').value = '';
+  el('fDays').value = '7'; el('fStart').value = dk(new Date());
+  el('timeList').innerHTML = '';
+  addTimeRow('08:00'); addTimeRow('20:00');
+}
+function fillForm(med){
+  el('fName').value  = med.name || '';
+  el('fDose').value  = med.dose || '';
+  el('fDays').value  = med.days || 1;
+  el('fStart').value = med.start || dk(new Date());
+  el('timeList').innerHTML = '';
+  (med.times && med.times.length ? med.times : ['08:00']).forEach(function(tm){ addTimeRow(tm); });
+}
+function startEdit(id){
+  var med = medById(id);
+  if (!med) return;
+  editingId = id;
+  fillForm(med);
+  syncFormLabels();
+  renderMeds();
+  var f = el('medForm');
+  if (f.scrollIntoView) f.scrollIntoView({ block:'start', behavior:'smooth' });
+  if (el('fName').focus) el('fName').focus();
+}
+function endEdit(){
+  editingId = null;
+  clearForm();
+  syncFormLabels();
+  renderMeds();
+}
+function migrateTodayRecords(oldMed, newMed){
+  var today = dk(new Date());
+  var oT = (oldMed.times || []).slice().sort();
+  var nT = (newMed.times || []).slice().sort();
+  var usedOld = {};
+
+  nT.forEach(function(nb){
+    if (oT.indexOf(nb) > -1) { usedOld[nb] = true; return; }
+    var best = null, bestDiff = 1e9;
+    oT.forEach(function(oa){
+      if (usedOld[oa]) return;
+      var diff = Math.abs(hm2min(oa) - hm2min(nb));
+      if (diff < bestDiff) { bestDiff = diff; best = oa; }
+    });
+    if (best === null || bestDiff > TIME_SHIFT_MAX_MIN) return;
+    var ka = doseKey(today, oldMed.id, best);
+    var kb = doseKey(today, newMed.id, nb);
+    if (!S.log[ka] || S.log[kb]) return;
+    usedOld[best] = true;
+    var r = S.log[ka];
+    if (!r.plan) r.plan = best;
+    S.log[kb] = r;
+    delete S.log[ka];
+  });
+  save();
+}
+
+/* ===================== 记录编辑 / 补记弹窗 ===================== */
+function fillMedSel(sel, medId, name){
+  sel.innerHTML = '';
+  S.meds.forEach(function(m){
+    var o = document.createElement('option');
+    o.value = m.id; o.textContent = m.name;
+    sel.appendChild(o);
+  });
+  if (medId && medId !== 'other') {
+    var exists = false, i;
+    for (i = 0; i < sel.options.length; i++) if (sel.options[i].value === medId) exists = true;
+    if (!exists) {
+      var od = document.createElement('option');
+      od.value = medId;
+      od.textContent = (name || t('deletedMed')) + ' · ' + (lang === 'en' ? 'deleted' : '已删除');
+      sel.appendChild(od);
+    }
+  }
+  var oo = document.createElement('option');
+  oo.value = 'other'; oo.textContent = t('optOther');
+  sel.appendChild(oo);
+
+  if (medId) sel.value = medId;
+  else sel.value = S.meds.length ? S.meds[0].id : 'other';
+}
+function toggleNameWrap(){
+  el('recNameWrap').style.display = (el('recMed').value === 'other') ? 'block' : 'none';
+}
+function syncSeg(){
+  each(el('recSeg').querySelectorAll('button'), function(b){
+    b.classList.toggle('on', b.getAttribute('data-s') === recStatus);
+  });
+  el('recAtWrap').style.display = (recStatus === 'taken') ? 'block' : 'none';
+}
+function openRecEditor(o){
+  o = o || {};
+  recEditKey = o.k || null;
+  var rec = o.rec || null;
+  var date = o.date || dk(new Date());
+  el('recDate').value = date;
+  el('recDate').max = dk(new Date());
+  fillMedSel(el('recMed'), o.medId || null, o.name || '');
+  el('recName').value = (rec && rec.n) || '';
+  el('recPlan').value = o.time || nowTimeStr(date);
+  el('recAt').value = (rec && rec.at) ? atText(rec.at) : (o.atNow ? nowTimeStr(date) : '');
+  recStatus = rec ? rec.st : 'taken';
+  el('recSub').textContent = o.name
+        ? fmt(t('recSub'), { name:o.name, date:date, time:(o.time || '') })
+        : t('backSub');
+  el('recClear').style.visibility = recEditKey ? 'visible' : 'hidden';
+  toggleNameWrap();
+  syncSeg();
+  on(el('recMask'));
+}
+function closeRec(){ off(el('recMask')); recEditKey = null; }
+function openRecFromRow(d){
+  openRecEditor({ k:d.k, date:d.date, medId:d.med ? d.med.id : '', name:d.med ? d.med.name : '', time:d.time, rec:d.r });
+}
+function openRecByKey(k){
+  var p = k.split('|');
+  openRecEditor({ k:k, date:p[0], medId:p[1], name:nameOf(p[1], S.log[k]), time:p[2], rec:S.log[k] });
+}
+function openFirstRecordToday(){
+  var l = todayDoses(dk(new Date())), i;
+  for (i = 0; i < l.length; i++) {
+    if (!l[i].r) {
+      openRecEditor({ k:l[i].k, date:l[i].date, medId:l[i].med.id, name:l[i].med.name, time:l[i].time, rec:null, atNow:true });
+      return;
+    }
+  }
+}
+
+/* ===================== 错过的提醒（补报） ===================== */
+function catchUpList(){
+  var now = new Date(), today = dk(now), yest = dk(new Date(Date.now() - 86400000));
+  var nm = now.getHours()*60 + now.getMinutes();
+  var out = [];
+
+  todayDoses(today).forEach(function(d){
+    if (nm <= hm2min(d.time) + MISS_AFTER_MIN) return;      /* 还没到期 */
+    if (d.r && (d.r.st === 'taken' || d.r.st === 'skipped')) return;
+    if (d.r && d.r.src !== 'auto') return;                  /* 用户自己确认过的就不再列 */
+    out.push(d);
+  });
+  todayDoses(yest).forEach(function(d){
+    if (d.r && (d.r.st === 'taken' || d.r.st === 'skipped')) return;
+    if (d.r && d.r.src !== 'auto') return;
+    out.push(d);
+  });
+  return out;
+}
+function showCatchUp(){
+  catchItems = catchUpList();
+  if (!catchItems.length) return;
+  el('catchSub').textContent = fmt(t('catchSub'), { n: catchItems.length });
+
+  var today = dk(new Date());
+  var h = '';
+  catchItems.slice(0, CATCHUP_MAX_SHOW).forEach(function(d, i){
+    var tag = (d.date === today) ? t('catchToday') : t('catchYest');
+    h += '<div class="crow" data-i="' + i + '">' +
+           '<div class="ct"><b>' + esc(d.time) + '</b> ' + esc(d.med.name) +
+             ' <span style="color:#7d8aa6">· ' + esc(tag) + '</span></div>' +
+           '<div class="cbtns">' +
+             '<button class="mini" data-act="taken" data-i="' + i + '">' + esc(t('recTaken')) + '</button>' +
+             '<button class="mini" data-act="missed" data-i="' + i + '">' + esc(t('recMissed')) + '</button>' +
+             '<button class="mini" data-act="skipped" data-i="' + i + '">' + esc(t('recSkipped')) + '</button>' +
+           '</div>' +
+         '</div>';
+  });
+  el('catchList').innerHTML = h;
+
+  each(el('catchList').querySelectorAll('button[data-act]'), function(b){
+    b.onclick = function(){
+      var i = parseInt(b.getAttribute('data-i'), 10);
+      var act = b.getAttribute('data-act');
+      var d = catchItems[i];
+      if (!d) return;
+      if (act === 'taken') {
+        /* 走记录弹窗，让它填真实时间（默认填现在） */
+        off(el('catchMask'));
+        openRecEditor({ k:d.k, date:d.date, medId:d.med.id, name:d.med.name, time:d.time, rec:null, atNow:true });
+        return;
+      }
+      putRec(d.k, recNew(act, 'manual', null, d.med.name));
+      var crow = b.parentNode && b.parentNode.parentNode;
+      if (crow) crow.style.opacity = '.45';
+      each(b.parentNode.querySelectorAll('button'), function(x){ x.disabled = true; });
+      renderToday(new Date()); renderLog(); checkDone(new Date()); wakeTick();
+    };
+  });
+
+  on(el('catchMask'));
+  notifyFire(t('catchTitle'), fmt(t('catchSub'), { n: catchItems.length }));
+}
+function maybeCatchUp(){
+  if (Date.now() < catchSnoozeUntil) return;
+  if (el('catchMask').classList.contains('on')) return;
+  if (ringKey || el('ringMask').classList.contains('on')) return;
+  if (gd.active) return;
+  if (!catchUpList().length) return;
+  showCatchUp();
+}
+
+/* ===================== 提醒逻辑 ===================== */
+function findDue(now){
+  var today = dk(now), nm = now.getHours()*60 + now.getMinutes(), list = todayDoses(today), i;
+  for (i = 0; i < list.length; i++) {
+    var d = list[i], m0 = hm2min(d.time);
+    if (d.r) continue;
+    if (nm >= m0 - EARLY_MIN && nm < m0 + MISS_AFTER_MIN) {
+      var sz = nearMiss[d.k] || 0;
+      if (now.getTime() < sz) continue;
+      return d;
+    }
+  }
+  return null;
+}
+function checkMiss(now){
+  var today = dk(now), nm = now.getHours()*60 + now.getMinutes(), list = todayDoses(today);
+  list.forEach(function(d){
+    if (d.r && (d.r.st === 'taken' || d.r.st === 'skipped')) return;
+    var m0 = hm2min(d.time);
+    if (nm > m0 + MISS_AFTER_MIN) {
+      var first = (!d.r || d.r.st !== 'missed');
+      if (first) {
+        S.log[d.k] = recNew('missed', 'auto', null, d.med.name);
+        save();
+      }
+      var last = lastMiss[d.k] || 0;
+      if (first || now.getTime() - last >= MISS_RENOTIFY_MIN * 60000) {
+        lastMiss[d.k] = now.getTime();
+        showMiss(d);
+      }
+    }
+  });
+}
+function checkDone(now){
+  var today = dk(now), list = todayDoses(today), i;
+  if (!list.length || S.celebrated[today]) return;
+  for (i = 0; i < list.length; i++) {
+    if (!list[i].r || list[i].r.st !== 'taken') return;
+  }
+  S.celebrated[today] = 1; save(); showCheer();
+}
+function calcStreak(now){
+  var cnt = 0, d = new Date(now.getFullYear(), now.getMonth(), now.getDate()), i, j;
+  if (!todayDoses(dk(d)).length) d.setDate(d.getDate() - 1);
+  for (i = 0; i < 400; i++) {
+    var list = todayDoses(dk(d));
+    if (!list.length) break;
+    var ok = true;
+    for (j = 0; j < list.length; j++) {
+      if (!list[j].r || list[j].r.st !== 'taken') { ok = false; break; }
+    }
+    if (!ok) break;
+    cnt++; d.setDate(d.getDate() - 1);
+  }
+  return cnt;
+}
+
+/* ===================== 弹窗：响铃 / 漏服 / 点赞 ===================== */
+function showRing(d){
+  ringKey = d.k;
+  el('ringMsg').textContent = fmt(t('ringMsg'), { name: d.med.name, dose: d.med.dose || '' });
+  on(el('ringMask'));
+  startBeep();
+  notifyDose(d);          /* 页面在后台时也能看到系统通知 */
+}
+function closeRing(){ off(el('ringMask')); stopBeep(); ringKey = null; }
+
+function showMiss(d){
+  el('missMsg').textContent = t('missMsg');
+  on(el('missMask'));
+  notifyMiss(d);
+  if (missTimer) clearTimeout(missTimer);
+  missTimer = setTimeout(function(){ off(el('missMask')); }, 12000);
+}
+function confetti(){
+  var cv = el('cf');
+  if (!cv || !cv.getContext) return;
+  cv.width = cv.clientWidth || 300; cv.height = cv.clientHeight || 260;
+  var ctx = cv.getContext('2d'), ps = [], colors = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#c56bff'], i;
+  for (i = 0; i < 130; i++) {
+    ps.push({ x: Math.random()*cv.width, y: Math.random()*-cv.height,
+              vx: (Math.random()-.5)*2.4, vy: 2 + Math.random()*3.4,
+              s: 5 + Math.random()*7, r: Math.random()*6.3, vr: (Math.random()-.5)*.3,
+              c: colors[i % colors.length] });
+  }
+  var frame = 0;
+  if (cfTimer) clearInterval(cfTimer);
+  cfTimer = setInterval(function(){
+    ctx.clearRect(0, 0, cv.width, cv.height); frame++;
+    ps.forEach(function(p){
+      p.x += p.vx; p.y += p.vy; p.r += p.vr; p.vy += 0.03;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.s/2, -p.s/2, p.s, p.s*0.6); ctx.restore();
+    });
+    if (frame > 260) { clearInterval(cfTimer); cfTimer = null; ctx.clearRect(0, 0, cv.width, cv.height); }
+  }, 26);
+}
+var PRAISE_ZH = ['棒极了，今天一顿都没落下！','按时吃药，身体一天比一天好！','坚持就是最好的养生，继续保持！','太自律了，给你点个赞！'];
+var PRAISE_EN = ['Well done — no dose missed today!','Taking it on time really pays off!','Consistency is the best medicine!','So disciplined — keep it up!'];
+function showCheer(){
+  var pool = (lang === 'en') ? PRAISE_EN : PRAISE_ZH;
+  el('cheerTitle').textContent = t('cheerTitle');
+  el('cheerMsg').textContent = pool[Math.floor(Math.random()*pool.length)];
+  el('cheerStreak').textContent = fmt(t('cheerStreak'), { n: calcStreak(new Date()) });
+  on(el('cheerMask'));
+  setTimeout(confetti, 30);
+}
+
+/* ===================== 天气 ===================== */
+var WMO = {
+  0:['晴','Clear'], 1:['晴间多云','Mainly clear'], 2:['多云','Partly cloudy'], 3:['阴','Overcast'],
+  45:['雾','Fog'], 48:['雾凇','Rime fog'],
+  51:['小毛毛雨','Light drizzle'], 53:['毛毛雨','Drizzle'], 55:['浓毛毛雨','Dense drizzle'],
+  56:['冻毛毛雨','Freezing drizzle'], 57:['浓冻毛毛雨','Dense freezing drizzle'],
+  61:['小雨','Light rain'], 63:['中雨','Rain'], 65:['大雨','Heavy rain'],
+  66:['冻雨','Freezing rain'], 67:['强冻雨','Heavy freezing rain'],
+  71:['小雪','Light snow'], 73:['中雪','Snow'], 75:['大雪','Heavy snow'], 77:['雪粒','Snow grains'],
+  80:['小阵雨','Light showers'], 81:['阵雨','Showers'], 82:['强阵雨','Violent showers'],
+  85:['阵雪','Snow showers'], 86:['强阵雪','Heavy snow showers'],
+  95:['雷阵雨','Thunderstorm'], 96:['雷阵雨伴小冰雹','Thunderstorm with hail'],
+  99:['雷阵雨伴大冰雹','Thunderstorm with heavy hail']
+};
+function wmoText(c){ var x = WMO[c]; return x ? x[lang === 'en' ? 1 : 0] : '—'; }
+function wmoIcon(c, day){
+  if (c === 0) return day ? '☀️' : '🌙';
+  if (c === 1 || c === 2) return day ? '🌤️' : '☁️';
+  if (c === 3) return '☁️';
+  if (c === 45 || c === 48) return '🌫️';
+  if (c >= 51 && c <= 57) return '🌦️';
+  if (c >= 61 && c <= 67) return '🌧️';
+  if (c >= 71 && c <= 77) return '❄️';
+  if (c >= 80 && c <= 82) return '🌧️';
+  if (c === 85 || c === 86) return '🌨️';
+  if (c >= 95) return '⛈️';
+  return '🌡️';
+}
+try { wxData = JSON.parse(localStorage.getItem(WX_KEY) || 'null'); } catch (e) {}
+function wxMsg(s){ var b = el('wxBody'); if (!b) return; b.className = 'wx-empty'; b.textContent = s; }
+function wxSave(){ try { localStorage.setItem(WX_KEY, JSON.stringify(wxData)); } catch (e) {} }
+function wxFetch(lat, lon, place){
+  wxMsg(t('wxLoading'));
+  var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
+            '&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m' +
+            '&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1';
+  fetch(url).then(function(r){ return r.json(); }).then(function(j){
+    wxData = { lat:lat, lon:lon, place:place || '', cur:j.current, daily:j.daily, ts:Date.now() };
+    wxSave(); wxRender();
+  }).catch(function(){ wxMsg(t('wxFail')); });
+}
+function wxReverse(lat, lon, cb){
+  fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' + lat + '&longitude=' + lon +
+        '&localityLanguage=' + (lang === 'en' ? 'en' : 'zh'))
+    .then(function(r){ return r.json(); })
+    .then(function(j){ cb(j.city || j.locality || j.principalSubdivision || j.countryName || ''); })
+    .catch(function(){ cb(''); });
+}
+function wxSearch(name){
+  wxMsg(t('wxLoading'));
+  fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(name) +
+        '&count=1&language=' + (lang === 'en' ? 'en' : 'zh') + '&format=json')
+    .then(function(r){ return r.json(); })
+    .then(function(j){
+      if (j.results && j.results.length) {
+        var r0 = j.results[0];
+        wxFetch(r0.latitude, r0.longitude, r0.name + (r0.admin1 ? ', ' + r0.admin1 : ''));
+      } else { wxMsg(t('wxNoCity')); }
+    })
+    .catch(function(){ wxMsg(t('wxFail')); });
+}
+function wxRender(){
+  var b = el('wxBody');
+  if (!b) return;
+  if (!wxData || !wxData.cur) { b.className = 'wx-empty'; b.textContent = t('wxPrompt'); return; }
+  var c = wxData.cur, dy = wxData.daily || {};
+  var hi = (dy.temperature_2m_max && dy.temperature_2m_max[0] != null) ? Math.round(dy.temperature_2m_max[0]) : '--';
+  var lo = (dy.temperature_2m_min && dy.temperature_2m_min[0] != null) ? Math.round(dy.temperature_2m_min[0]) : '--';
+  var up = new Date(wxData.ts || Date.now());
+  b.className = '';
+  b.innerHTML =
+    '<div class="wx-top">' +
+      '<div class="wx-ico">' + wmoIcon(c.weather_code, c.is_day) + '</div>' +
+      '<div class="wx-main"><div class="wx-temp">' + Math.round(c.temperature_2m) + '°</div>' +
+      '<div class="wx-desc">' + esc(wmoText(c.weather_code)) + '</div></div>' +
+      '<div class="wx-place">' + esc(wxData.place || '') + '</div>' +
+    '</div>' +
+    '<div class="wx-meta">' +
+      '<span>' + t('wxHiLo') + ' ' + hi + '° / ' + lo + '°</span>' +
+      '<span>' + t('wxHum') + ' ' + c.relative_humidity_2m + '%</span>' +
+      '<span>' + t('wxFeels') + ' ' + Math.round(c.apparent_temperature) + '°</span>' +
+      '<span>' + t('wxWind') + ' ' + c.wind_speed_10m + ' km/h</span>' +
+    '</div>' +
+    '<div class="wx-time">' + t('wxUpdated') + ' ' + pad(up.getHours()) + ':' + pad(up.getMinutes()) + '</div>';
+}
+
+/* ===================== 使用指南（11 步） ===================== */
+var STEPS = [
+  { sel:'#clockCard', t:'g1t',  d:'g1d'  },
+  { sel:'#alertCard', t:'g2t',  d:'g2d'  },
+  { sel:'#seniorBtn', t:'g3t',  d:'g3d'  },
+  { sel:'#guideBtn',  t:'g4t',  d:'g4d'  },
+  { sel:'#wxCard',    t:'g5t',  d:'g5d'  },
+  { sel:'#fName',     t:'g6t',  d:'g6d'  },
+  { sel:'#timeList',  t:'g7t',  d:'g7d'  },
+  { sel:'#fDays',     t:'g8t',  d:'g8d'  },
+  { sel:'#saveMed',   t:'g9t',  d:'g9d'  },
+  { sel:'#listCard',  t:'g10t', d:'g10d' },
+  { sel:'#statCard',  t:'g11t', d:'g11d' }
+];
+var gd = { active:false, i:0 };
+
+function guideStart(){
+  gd.active = true; gd.i = 0;
+  el('gdoc').innerHTML = DOC_SVG;
+  on(el('spot')); on(el('gcard'));
+  guideShow();
+}
+function guideShow(){
+  var s = STEPS[gd.i], node = document.querySelector(s.sel);
+  if (node && node.scrollIntoView) node.scrollIntoView({ block:'center' });
+  setTimeout(function(){ guidePlace(node); }, 60);
+  el('gstep').textContent = fmt(t('gStep'), { i: gd.i + 1, n: STEPS.length });
+  el('gt').textContent = t(s.t);
+  el('gd').textContent = t(s.d);
+  el('gPrev').style.visibility = (gd.i === 0) ? 'hidden' : 'visible';
+  el('gNext').textContent = (gd.i === STEPS.length - 1) ? t('gDone') : t('gNext');
+}
+function guidePlace(node){
+  var r, pad = 8;
+  if (node && node.getBoundingClientRect) r = node.getBoundingClientRect();
+  else r = { top: window.innerHeight/2, left: window.innerWidth/2, width:0, height:0,
+             bottom: window.innerHeight/2 };
+
+  var sp = el('spot');
+  sp.style.top = Math.max(4, r.top - pad) + 'px';
+  sp.style.left = Math.max(4, r.left - pad) + 'px';
+  sp.style.width = Math.max(24, r.width + pad*2) + 'px';
+  sp.style.height = Math.max(24, r.height + pad*2) + 'px';
+
+  var card = el('gcard');
+  var w = Math.min(window.innerWidth - 24, 420);
+  card.style.width = w + 'px';
+  var left = Math.min(Math.max(12, r.left + r.width/2 - w/2), window.innerWidth - w - 12);
+  card.style.left = left + 'px';
+
+  var hh = card.offsetHeight || 160;
+  var below = r.bottom + pad + 14;
+  if (below + hh <= window.innerHeight - 12) card.style.top = below + 'px';
+  else card.style.top = Math.max(12, r.top - pad - 14 - hh) + 'px';
+}
+function guideEnd(){
+  gd.active = false;
+  off(el('spot')); off(el('gcard'));
+  try { localStorage.setItem(GUIDE_KEY, '1'); } catch (e) {}
+}
+
+/* ===================== 主循环 ===================== */
+function tick(){
+  var now = new Date();
+  renderClock(now);
+  checkMiss(now);
+  var due = findDue(now);
+  if (due && !ringKey && !el('ringMask').classList.contains('on')) showRing(due);
+  renderToday(now);
+  checkDone(now);
+  wakeTick();
+  tickCount++;
+  if (tickCount % CATCHUP_CHECK_SEC === 0) maybeCatchUp();
+}
+
+/* ===================== 事件绑定 ===================== */
+el('langBtn').onclick = function(){
+  lang = (lang === 'zh') ? 'en' : 'zh';
+  try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+  applyLang(); renderToday(new Date()); renderMeds(); renderLog(); wxRender(); statRefreshNote();
+};
+el('seniorBtn').onclick = function(){
+  senior = !senior;
+  try { localStorage.setItem(SENIOR_KEY, senior ? '1' : '0'); } catch (e) {}
+  applySenior();
+  if (gd.active) setTimeout(function(){ guidePlace(document.querySelector(STEPS[gd.i].sel)); }, 60);
+};
+el('guideBtn').onclick = function(){ guideStart(); };
+el('gNext').onclick = function(){
+  if (gd.i === STEPS.length - 1) { guideEnd(); return; }
+  gd.i++; guideShow();
+};
+el('gPrev').onclick = function(){ if (gd.i > 0) { gd.i--; guideShow(); } };
+el('gSkip').onclick = function(){ guideEnd(); };
+window.addEventListener('resize', function(){
+  if (gd.active) guidePlace(document.querySelector(STEPS[gd.i].sel));
+});
+
+/* 一旦有交互就解锁音频，后台才可能响 */
+document.addEventListener('click', audioUnlock);
+document.addEventListener('touchstart', audioUnlock, { passive:true });
+
+/* 提醒可靠性卡片 */
+el('notifyBtn').onclick = function(){ notifyAllow(); };
+el('wakeBtn').onclick = function(){
+  if (!wakeSupported()) { toast(t('noWakeSupport')); return; }
+  wakeWanted = !wakeWanted;
+  try { localStorage.setItem(WAKE_KEY, wakeWanted ? '1' : '0'); } catch (e) {}
+  wakeUpdateUI();
+  wakeTick();
+};
+el('soundBtn').onclick = function(){
+  audioUnlock();
+  beepOnce();
+  toast(t('soundOk'));
+};
+
+el('addTime').onclick = function(){ addTimeRow('12:00'); };
+el('cancelEdit').onclick = function(){ endEdit(); };
+
+el('saveMed').onclick = function(){
+  var name = el('fName').value.trim();
+  var dose = el('fDose').value.trim();
+  var times = [];
+  each(document.querySelectorAll('#timeList input[type=time]'), function(i){
+    if (i.value) times.push(i.value);
+  });
+  times = times.filter(function(v, i, a){ return a.indexOf(v) === i; }).sort();
+  var days = parseInt(el('fDays').value, 10) || 0;
+  var start = el('fStart').value || dk(new Date());
+  if (!name) { toast(t('errMedName')); return; }
+  if (!times.length) { toast(t('errTime')); return; }
+  if (days < 1) { toast(t('errDays')); return; }
+
+  var med = { id: editingId || ('m' + Date.now().toString(36)),
+              name:name, dose:dose, times:times, days:days, start:start };
+
+  if (editingId) {
+    var old = medById(editingId);
+    if (old) { migrateTodayRecords(old, med); lastMiss = {}; nearMiss = {}; }
+    for (var i = 0; i < S.meds.length; i++) {
+      if (S.meds[i].id === editingId) { S.meds[i] = med; break; }
+    }
+  } else {
+    S.meds.push(med);
+  }
+  save();
+  endEdit();
+  renderToday(new Date());
+  renderLog();
+  wakeTick();
+};
+
+each(el('recSeg').querySelectorAll('button'), function(b){
+  b.onclick = function(){
+    recStatus = b.getAttribute('data-s');
+    if (recStatus === 'taken' && !el('recAt').value) el('recAt').value = el('recPlan').value;
+    syncSeg();
+  };
+});
+el('recMed').onchange = function(){ toggleNameWrap(); };
+el('recClear').onclick = function(){
+  if (!recEditKey) { closeRec(); return; }
+  putRec(recEditKey, null);
+  closeRec();
+  renderToday(new Date()); renderLog(); wakeTick();
+};
+el('recCancel').onclick = function(){ closeRec(); };
+el('recSave').onclick = function(){
+  var date = el('recDate').value || dk(new Date());
+  if (date > dk(new Date())) { toast(t('errFuture')); return; }
+  var medId = el('recMed').value;
+  var nm = '';
+  if (medId === 'other') {
+    nm = (el('recName').value || '').trim();
+    if (!nm) { toast(t('errName')); return; }
+  }
+  if (!recStatus) { toast(t('errSeg')); return; }
+  var plan = el('recPlan').value || nowTimeStr(date);
+  var k = doseKey(date, medId, plan);
+  var replaced = (k !== recEditKey && S.log[k]) ? true : false;
+
+  var o = recNew(recStatus, recEditKey ? ((S.log[recEditKey] && S.log[recEditKey].src) || 'manual') : 'back', null, nm);
+  if (!nm) {
+    var mm = medById(medId);
+    if (mm) o.n = mm.name;
+  }
+  if (recStatus === 'taken') {
+    var atT = el('recAt').value || plan;
+    var at = atFromDateTime(date, atT);
+    if (hm2min(atT) + NIGHT_SHIFT_MIN < hm2min(plan)) at += 86400000;
+    o.at = at;
+  }
+  if (recEditKey && recEditKey !== k) delete S.log[recEditKey];
+  putRec(k, o);
+  closeRec();
+  renderToday(new Date()); renderLog(); checkDone(new Date()); wakeTick();
+  if (replaced) toast(t('overwrite'));
+};
+
+each(el('logRange').querySelectorAll('button'), function(b){
+  b.onclick = function(){
+    logRange = parseInt(b.getAttribute('data-r'), 10);
+    renderLog();
+  };
+});
+el('logAdd').onclick = function(){ openRecEditor(null); };
+el('logCsv').onclick = function(){ exportCsv(); };
+el('logTxt').onclick = function(){ exportTxt(); };
+
+el('statRetry').onclick = function(){ statUpdate(); };
+
+el('catchDone').onclick = function(){
+  off(el('catchMask'));
+  catchSnoozeUntil = Date.now() + 5 * 60000;
+  renderToday(new Date()); renderLog(); wakeTick();
+};
+el('catchLater').onclick = function(){
+  off(el('catchMask'));
+  catchSnoozeUntil = Date.now() + 10 * 60000;
+};
+
+el('ringTaken').onclick = function(){
+  if (ringKey) {
+    var mm = medById(ringKey.split('|')[1]);
+    putRec(ringKey, recNew('taken', 'alarm', Date.now(), mm ? mm.name : ''));
+  }
+  closeRing(); renderToday(new Date()); renderLog(); checkDone(new Date()); wakeTick();
+};
+el('ringSnooze').onclick = function(){
+  if (ringKey) nearMiss[ringKey] = Date.now() + SNOOZE_MIN * 60000;
+  closeRing();
+};
+el('missOk').onclick = function(){
+  off(el('missMask'));
+  if (missTimer) clearTimeout(missTimer);
+  openFirstRecordToday();
+};
+el('cheerOk').onclick = function(){ off(el('cheerMask')); };
+
+el('wxLocate').onclick = function(){
+  if (!navigator.geolocation) { wxMsg(t('wxNoGeo')); return; }
+  wxMsg(t('wxLoading'));
+  navigator.geolocation.getCurrentPosition(function(p){
+    var la = p.coords.latitude, lo = p.coords.longitude;
+    wxReverse(la, lo, function(n){ wxFetch(la, lo, n || t('myLocation')); });
+  }, function(){ wxMsg(t('wxFail')); }, { timeout:10000, maximumAge:600000 });
+};
+el('wxManual').onclick = function(){
+  var r = el('wxCityRow');
+  var show = (r.style.display !== 'flex');
+  r.style.display = show ? 'flex' : 'none';
+  if (show && el('wxCityInput').focus) el('wxCityInput').focus();
+};
+el('wxCityGo').onclick = function(){
+  var v = (el('wxCityInput').value || '').trim();
+  if (!v) return;
+  el('wxCityRow').style.display = 'none';
+  wxSearch(v);
+};
+el('wxCityInput').onkeydown = function(ev){
+  if (ev && (ev.key === 'Enter' || ev.keyCode === 13)) el('wxCityGo').click();
+};
+el('wxRefresh').onclick = function(){
+  if (wxData && wxData.lat != null) wxFetch(wxData.lat, wxData.lon, wxData.place);
+  else el('wxLocate').click();
+};
+
+/* 回到前台：立刻补一次检查、补报错过、重新申请常亮 */
+document.addEventListener('visibilitychange', function(){
+  if (!document.hidden) {
+    tick();
+    wakeTick();
+    maybeCatchUp();
+    if (wxData && wxData.lat != null) wxFetch(wxData.lat, wxData.lon, wxData.place);
+  } else {
+    wakeRelease();
+  }
+});
+window.addEventListener('pageshow', function(){ wakeTick(); maybeCatchUp(); });
+
+/* ===================== 启动 ===================== */
+try {
+  load();
+
+  el('ringDoc').innerHTML = DOC_SVG;
+  el('missDoc').innerHTML = DOC_SVG;
+  el('cheerDoc').innerHTML = DOC_SVG;
+  el('gdoc').innerHTML = DOC_SVG;
+  el('catchDoc').innerHTML = DOC_SVG;
+
+  applyLang();
+  clearForm();
+  renderMeds();
+  wxRender();
+  renderToday(new Date());
+  renderLog();
+  renderClock(new Date());
+  save();
+
+  notifyInit();
+  notifyUpdateUI();
+  wakeUpdateUI();
+
+  statLoad();
+  statCountLocal();
+  statUpdate();
+
+  if (wxData && wxData.lat != null) wxFetch(wxData.lat, wxData.lon, wxData.place);
+
+  setInterval(function(){
+    if (wxData && wxData.lat != null) wxFetch(wxData.lat, wxData.lon, wxData.place);
+  }, WX_REFRESH_MIN * 60000);
+
+  setInterval(tick, AUTO_MS);
+
+  wakeTick();
+  setTimeout(maybeCatchUp, 1500);
+
+  var seen = false;
+  try { seen = localStorage.getItem(GUIDE_KEY) === '1'; } catch (e2) {}
+  if (!seen) setTimeout(function(){ if (!gd.active) guideStart(); }, 1000);
+
+} catch (e) {
+  if (window.console && console.error) console.error(e);
+  var ft = el('footTip');
+  if (ft) ft.textContent = fmt(t('bootFail'), { m: (e && e.message) ? e.message : String(e) });
+}
+
+})();
+</script>
+</body>
+</html>
